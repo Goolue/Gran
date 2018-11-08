@@ -1,0 +1,4 @@
+/home/goolue/clion-2018.2.5/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /home/goolue/programming/audio/Gran/Builds/CLion
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/goolue/programming/audio/Gran/Builds/CLion/cmake-build-debug
