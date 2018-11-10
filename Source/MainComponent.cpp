@@ -162,7 +162,7 @@ void MainComponent::openFileBtnClicked() {
                         File::getSpecialLocation(File::currentExecutableFile), "*.wav");
     if (chooser.browseForFileToOpen()) {
         File file(chooser.getResult());
-        auto *reader = formatManager.createReaderFor(file);
+        std::unique_ptr<AudioFormatReader> reader(formatManager.createReaderFor (file));
         if (reader != nullptr) {
             ReferenceCountedBuffer::Ptr newBuffer = new ReferenceCountedBuffer(file.getFileName(),
                                                                                reader->numChannels,
