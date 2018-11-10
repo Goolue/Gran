@@ -111,8 +111,7 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo &bufferToFill
             }
         }
         retainedCurrentBuffer->position = position;
-    }
-    else {
+    } else {
         bufferToFill.clearActiveBufferRegion();
     }
 }
@@ -165,12 +164,12 @@ void MainComponent::openFileBtnClicked() {
         File file(chooser.getResult());
         auto *reader = formatManager.createReaderFor(file);
         if (reader != nullptr) {
-            ReferenceCountedBuffer::Ptr newBuffer = new ReferenceCountedBuffer (file.getFileName(),
-                                                                                reader->numChannels,
-                                                                                (int) reader->lengthInSamples);
-            reader->read (newBuffer->getAudioSampleBuffer(), 0, (int) reader->lengthInSamples, 0, true, true);
+            ReferenceCountedBuffer::Ptr newBuffer = new ReferenceCountedBuffer(file.getFileName(),
+                                                                               reader->numChannels,
+                                                                               (int) reader->lengthInSamples);
+            reader->read(newBuffer->getAudioSampleBuffer(), 0, (int) reader->lengthInSamples, 0, true, true);
             currentBuffer = newBuffer;
-            buffers.add (newBuffer);
+            buffers.add(newBuffer);
             thumbnail.setSource(new FileInputSource(file));
             fileLoaded = true;
             setAudioChannels(0, reader->numChannels);
