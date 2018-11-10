@@ -9,6 +9,7 @@
 #pragma once
 
 #include "../JuceLibraryCode/JuceHeader.h"
+#include "ReferenceCountedBuffer.h"
 
 //==============================================================================
 enum PlayState {
@@ -21,7 +22,7 @@ enum PlayState {
     This component lives inside our window, and this is where you should put all
     your controls and content.
 */
-class MainComponent : public AudioAppComponent, public ChangeListener {
+class MainComponent : public AudioAppComponent, public ChangeListener, private Thread {
 public:
     //==============================================================================
     MainComponent();
@@ -49,6 +50,7 @@ private:
     void openFileBtnClicked();
     void playBtnClicked();
     void changeState(PlayState newState);
+    void checkForBuffersToFree();
 
     void paintThumbnailIfFileWasLoaded(Graphics &g, const Colour &backgroundColour, const Rectangle<int> &thumbnailBounds);
 
@@ -61,10 +63,12 @@ private:
     AudioThumbnailCache thumbnailCache;
     AudioThumbnail thumbnail;
 
-    int position = 0;
     bool fileLoaded = false;
-    AudioSampleBuffer fileBuffer;
+    ReferenceCountedArray<ReferenceCountedBuffer> buffers;
+    ReferenceCountedBuffer::Ptr currentBuffer;
 
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
+
+    void run() override;
 };

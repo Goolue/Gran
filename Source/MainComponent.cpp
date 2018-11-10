@@ -9,13 +9,11 @@
 #include "MainComponent.h"
 
 //==============================================================================
-MainComponent::MainComponent() : thumbnailCache(5), thumbnail(1024, formatManager, thumbnailCache), state(Stop) {
+MainComponent::MainComponent() : Thread("MainThread", 0), thumbnailCache(5),
+                                 thumbnail(1024, formatManager, thumbnailCache), state(Stop), buffers() {
     // Make sure you set the size of the component after
     // you add any child components.
     setSize(800, 600);
-
-    // specify the number of input and output channels that we want to open
-    setAudioChannels(0, 2);
 
     formatManager.registerBasicFormats();
 
@@ -34,6 +32,23 @@ MainComponent::MainComponent() : thumbnailCache(5), thumbnail(1024, formatManage
     playBtn.setBounds(openFileBtn.getRight() + 5, openFileBtn.getY(), 100, 100);
 
     thumbnail.addChangeListener(this);
+}
+
+void MainComponent::run() {
+    while (!threadShouldExit()) {
+        checkForBuffersToFree();
+        wait(500);
+    }
+
+}
+
+void MainComponent::checkForBuffersToFree() {
+    for (int i = buffers.size() - 1; i > 0; --i) {
+        ReferenceCountedBuffer::Ptr buffer(buffers.getUnchecked(i));
+        if (buffer->getReferenceCount() == 2) {
+            buffers.remove(i);
+        }
+    }
 }
 
 void MainComponent::changeListenerCallback(ChangeBroadcaster *source) {
@@ -66,22 +81,36 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo &bufferToFill
     // (to prevent the output of random noise)
 
     if (fileLoaded && state == Play) {
-        auto numInputChannels = fileBuffer.getNumChannels();
+        ReferenceCountedBuffer::Ptr retainedCurrentBuffer(currentBuffer);
+        if (retainedCurrentBuffer == nullptr) {
+            bufferToFill.clearActiveBufferRegion();
+            return;
+        }
+        auto *currentAudioSampleBuffer = retainedCurrentBuffer->getAudioSampleBuffer();
+        auto position = retainedCurrentBuffer->position;
+        auto numInputChannels = currentAudioSampleBuffer->getNumChannels();
         auto numOutputChannels = bufferToFill.buffer->getNumChannels();
         auto outputSamplesRemaining = bufferToFill.numSamples;
-        auto outputSamplesOffset = bufferToFill.startSample;
+        auto outputSamplesOffset = 0;
         while (outputSamplesRemaining > 0) {
-            auto bufferSamplesRemaining = fileBuffer.getNumSamples() - position;
+            auto bufferSamplesRemaining = currentAudioSampleBuffer->getNumSamples() - position;
             auto samplesThisTime = jmin(outputSamplesRemaining, bufferSamplesRemaining);
             for (auto channel = 0; channel < numOutputChannels; ++channel) {
-                bufferToFill.buffer->copyFrom(channel, outputSamplesOffset, fileBuffer, channel % numInputChannels,
-                                              position, samplesThisTime);
+                bufferToFill.buffer->copyFrom(channel,
+                                              bufferToFill.startSample + outputSamplesOffset,
+                                              *currentAudioSampleBuffer,
+                                              channel % numInputChannels,
+                                              position,
+                                              samplesThisTime);
             }
             outputSamplesRemaining -= samplesThisTime;
             outputSamplesOffset += samplesThisTime;
             position += samplesThisTime;
-            if (position == fileBuffer.getNumSamples()) position = 0;
+            if (position == currentAudioSampleBuffer->getNumSamples()) {
+                position = 0;
+            }
         }
+        retainedCurrentBuffer->position = position;
     }
     else {
         bufferToFill.clearActiveBufferRegion();
@@ -129,8 +158,6 @@ void MainComponent::resized() {
 }
 
 void MainComponent::openFileBtnClicked() {
-    shutdownAudio();
-
     playBtn.setEnabled(true);
     FileChooser chooser("Select a Wave file to play...",
                         File::getSpecialLocation(File::currentExecutableFile), "*.wav");
@@ -138,13 +165,15 @@ void MainComponent::openFileBtnClicked() {
         File file(chooser.getResult());
         auto *reader = formatManager.createReaderFor(file);
         if (reader != nullptr) {
-            fileBuffer.setSize(reader->numChannels, static_cast<int>(reader->lengthInSamples));
-            reader->read(&fileBuffer, 0, static_cast<int>(reader->lengthInSamples), 0, true, true);
-            std::unique_ptr<AudioFormatReaderSource> newSource(new AudioFormatReaderSource(reader, true));
+            ReferenceCountedBuffer::Ptr newBuffer = new ReferenceCountedBuffer (file.getFileName(),
+                                                                                reader->numChannels,
+                                                                                (int) reader->lengthInSamples);
+            reader->read (newBuffer->getAudioSampleBuffer(), 0, (int) reader->lengthInSamples, 0, true, true);
+            currentBuffer = newBuffer;
+            buffers.add (newBuffer);
             thumbnail.setSource(new FileInputSource(file));
-
-            position = 0;
-            setAudioChannels(0, reader->numChannels); // also starts the audio again
+            fileLoaded = true;
+            setAudioChannels(0, reader->numChannels);
         }
     }
     fileLoaded = true;
@@ -153,10 +182,11 @@ void MainComponent::openFileBtnClicked() {
 void MainComponent::playBtnClicked() {
     std::cout << "playBtnClicked " << "state is now " << playBtn.getToggleState() << std::endl;
     if (playBtn.getToggleState()) {
-        changeState(Stop);
-    } else changeState(Play);
+        changeState(Play);
+    } else changeState(Stop);
 }
 
 void MainComponent::changeState(PlayState newState) {
+    std::cout << "state is " << state << " changing state to " << newState << std::endl;
     state = newState;
 }
