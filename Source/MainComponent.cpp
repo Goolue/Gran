@@ -31,7 +31,7 @@ MainComponent::MainComponent() : thumbnailCache(5), thumbnail(1024, formatManage
     playBtn.setColour(ToggleButton::tickColourId, Colours::green);
     playBtn.setColour(ToggleButton::tickDisabledColourId, Colours::red);
     playBtn.setEnabled(false);
-    playBtn.onClick = [this] {playBtnClicked();};
+    playBtn.onClick = [this] { playBtnClicked(); };
     playBtn.setBounds(openFileBtn.getRight() + 5, openFileBtn.getY(), 100, 100);
 
     thumbnail.addChangeListener(this);
@@ -39,7 +39,7 @@ MainComponent::MainComponent() : thumbnailCache(5), thumbnail(1024, formatManage
     transportSource.setGain(0.5f);
 }
 
-void MainComponent::changeListenerCallback(ChangeBroadcaster* source) {
+void MainComponent::changeListenerCallback(ChangeBroadcaster *source) {
     if (source == &thumbnail) repaint();
     else if (source == &transportSource) {
         if (transportSource.getCurrentPosition() == transportSource.getLengthInSeconds()) {
@@ -62,7 +62,8 @@ void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate
     // but be careful - it will be called on the audio thread, not the GUI thread.
 
     // For more details, see the help for AudioProcessor::prepareToPlay()
-    transportSource.prepareToPlay(samplesPerBlockExpected, sampleRate);
+//    transportSource.prepareToPlay(samplesPerBlockExpected, sampleRate);
+
 }
 
 void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo &bufferToFill) {
@@ -72,11 +73,28 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo &bufferToFill
 
     // Right now we are not producing any data, in which case we need to clear the buffer
     // (to prevent the output of random noise)
-    if (readerSource == nullptr) {
-        bufferToFill.clearActiveBufferRegion();
-        return;
+
+    if (fileLoaded && state == Play) {
+        auto numInputChannels = fileBuffer.getNumChannels();
+        auto numOutputChannels = bufferToFill.buffer->getNumChannels();
+        auto outputSamplesRemaining = bufferToFill.numSamples;
+        auto outputSamplesOffset = bufferToFill.startSample;
+        while (outputSamplesRemaining > 0) {
+            auto bufferSamplesRemaining = fileBuffer.getNumSamples() - position;
+            auto samplesThisTime = jmin(outputSamplesRemaining, bufferSamplesRemaining);
+            for (auto channel = 0; channel < numOutputChannels; ++channel) {
+                bufferToFill.buffer->copyFrom(channel, outputSamplesOffset, fileBuffer, channel % numInputChannels,
+                                              position, samplesThisTime);
+            }
+            outputSamplesRemaining -= samplesThisTime;
+            outputSamplesOffset += samplesThisTime;
+            position += samplesThisTime;
+            if (position == fileBuffer.getNumSamples()) position = 0;
+        }
     }
-    transportSource.getNextAudioBlock(bufferToFill);
+    else {
+        bufferToFill.clearActiveBufferRegion();
+    }
 }
 
 void MainComponent::releaseResources() {
@@ -97,8 +115,7 @@ void MainComponent::paint(Graphics &g) {
     Rectangle<int> thumbnailBounds(10, 100, getWidth() - 20, getHeight() - 120);
     if (thumbnail.getNumChannels() > 0) {
         paintThumbnailIfFileWasLoaded(g, backgroundColour, thumbnailBounds);
-    }
-    else {
+    } else {
         g.drawFittedText("No file was loaded!", thumbnailBounds, Justification::centred, 2);
     }
 }
@@ -106,13 +123,13 @@ void MainComponent::paint(Graphics &g) {
 void MainComponent::paintThumbnailIfFileWasLoaded(Graphics &g, const Colour &backgroundColour,
                                                   const Rectangle<int> &thumbnailBounds) {
     g.setColour(backgroundColour);
-    auto audioLength (thumbnail.getTotalLength());
+    auto audioLength(thumbnail.getTotalLength());
     g.setColour(Colours::red);
-    thumbnail.drawChannels (g, thumbnailBounds, 0.0, audioLength, 1.0f);
-    g.setColour (Colours::green);
-    auto audioPosition (transportSource.getCurrentPosition());
-    auto drawPosition = (float)((audioPosition / audioLength) * thumbnailBounds.getWidth() + thumbnailBounds.getX());
-    g.drawLine (drawPosition, thumbnailBounds.getY(), drawPosition, thumbnailBounds.getBottom(), 2.0f);
+    thumbnail.drawChannels(g, thumbnailBounds, 0.0, audioLength, 1.0f);
+//    g.setColour(Colours::green);
+//    auto audioPosition(position);
+//    auto drawPosition = (float) ((audioPosition / audioLength) * thumbnailBounds.getWidth() + thumbnailBounds.getX());
+//    g.drawLine(drawPosition, thumbnailBounds.getY(), drawPosition, thumbnailBounds.getBottom(), 2.0f);
 
 }
 
@@ -126,21 +143,29 @@ void MainComponent::resized() {
 }
 
 void MainComponent::openFileBtnClicked() {
+    shutdownAudio();
+
     playBtn.setEnabled(true);
     FileChooser chooser("Select a Wave file to play...",
                         File::getSpecialLocation(File::currentExecutableFile), "*.wav");
     if (chooser.browseForFileToOpen()) {
         File file(chooser.getResult());
-        auto* reader = formatManager.createReaderFor(file);
+        auto *reader = formatManager.createReaderFor(file);
         if (reader != nullptr) {
+            fileBuffer.setSize(reader->numChannels, static_cast<int>(reader->lengthInSamples));
+            reader->read(&fileBuffer, 0, static_cast<int>(reader->lengthInSamples), 0, true, true);
             std::unique_ptr<AudioFormatReaderSource> newSource(new AudioFormatReaderSource(reader, true));
-            transportSource.setSource(newSource.get(), 0, nullptr, reader->sampleRate);
-            transportSource.setLooping(true);
-            std::cout << "source len is: " << transportSource.getLengthInSeconds() << std::endl;
+//            transportSource.setSource(newSource.get(), 0, nullptr, reader->sampleRate);
+//            transportSource.setLooping(true);
+//            std::cout << "source len is: " << transportSource.getLengthInSeconds() << std::endl;
             thumbnail.setSource(new FileInputSource(file));
             readerSource = std::move(newSource);
+
+            position = 0;
+            setAudioChannels(0, reader->numChannels); // also starts the audio again
         }
     }
+    fileLoaded = true;
 }
 
 void MainComponent::playBtnClicked() {
@@ -151,18 +176,19 @@ void MainComponent::playBtnClicked() {
 }
 
 void MainComponent::changeState(PlayState newState) {
-    if (state != newState)
-    {
+    if (state != newState) {
         state = newState;
         switch (newState) {
             case Stop:
             case Pause:
-                std::cout << "starting " << transportSource.getCurrentPosition() << std::endl;
-                transportSource.start();
+                //TODO
+//                std::cout << "starting " << transportSource.getCurrentPosition() << std::endl;
+//                transportSource.start();
                 break;
             case Play:
-                std::cout << "stopping " << transportSource.getCurrentPosition() << std::endl;
-                transportSource.stop();
+                //TODO
+//                std::cout << "stopping " << transportSource.getCurrentPosition() << std::endl;
+//                transportSource.stop();
                 break;
         }
     }

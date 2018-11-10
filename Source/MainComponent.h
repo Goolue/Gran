@@ -56,12 +56,16 @@ private:
     TextButton openFileBtn;
     ToggleButton playBtn;
 
-    AudioFormatManager formatManager;
+    AudioFormatManager formatManager; // TODO maybe remove
     std::unique_ptr<AudioFormatReaderSource> readerSource;
-    AudioTransportSource transportSource;
+    AudioTransportSource transportSource; // TODO remove
     PlayState state;
     AudioThumbnailCache thumbnailCache;
     AudioThumbnail thumbnail;
+
+    int position = 0;
+    bool fileLoaded = false;
+    AudioSampleBuffer fileBuffer;
 
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
