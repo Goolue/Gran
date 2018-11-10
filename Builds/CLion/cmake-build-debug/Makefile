@@ -555,6 +555,33 @@ home/goolue/programming/audio/Gran/Source/MainComponent.cpp.s:
 	$(MAKE) -f CMakeFiles/APP.dir/build.make CMakeFiles/APP.dir/home/goolue/programming/audio/Gran/Source/MainComponent.cpp.s
 .PHONY : home/goolue/programming/audio/Gran/Source/MainComponent.cpp.s
 
+home/goolue/programming/audio/Gran/Source/ThumbnailComponent.o: home/goolue/programming/audio/Gran/Source/ThumbnailComponent.cpp.o
+
+.PHONY : home/goolue/programming/audio/Gran/Source/ThumbnailComponent.o
+
+# target to build an object file
+home/goolue/programming/audio/Gran/Source/ThumbnailComponent.cpp.o:
+	$(MAKE) -f CMakeFiles/APP.dir/build.make CMakeFiles/APP.dir/home/goolue/programming/audio/Gran/Source/ThumbnailComponent.cpp.o
+.PHONY : home/goolue/programming/audio/Gran/Source/ThumbnailComponent.cpp.o
+
+home/goolue/programming/audio/Gran/Source/ThumbnailComponent.i: home/goolue/programming/audio/Gran/Source/ThumbnailComponent.cpp.i
+
+.PHONY : home/goolue/programming/audio/Gran/Source/ThumbnailComponent.i
+
+# target to preprocess a source file
+home/goolue/programming/audio/Gran/Source/ThumbnailComponent.cpp.i:
+	$(MAKE) -f CMakeFiles/APP.dir/build.make CMakeFiles/APP.dir/home/goolue/programming/audio/Gran/Source/ThumbnailComponent.cpp.i
+.PHONY : home/goolue/programming/audio/Gran/Source/ThumbnailComponent.cpp.i
+
+home/goolue/programming/audio/Gran/Source/ThumbnailComponent.s: home/goolue/programming/audio/Gran/Source/ThumbnailComponent.cpp.s
+
+.PHONY : home/goolue/programming/audio/Gran/Source/ThumbnailComponent.s
+
+# target to generate assembly for a file
+home/goolue/programming/audio/Gran/Source/ThumbnailComponent.cpp.s:
+	$(MAKE) -f CMakeFiles/APP.dir/build.make CMakeFiles/APP.dir/home/goolue/programming/audio/Gran/Source/ThumbnailComponent.cpp.s
+.PHONY : home/goolue/programming/audio/Gran/Source/ThumbnailComponent.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -612,6 +639,9 @@ help:
 	@echo "... home/goolue/programming/audio/Gran/Source/MainComponent.o"
 	@echo "... home/goolue/programming/audio/Gran/Source/MainComponent.i"
 	@echo "... home/goolue/programming/audio/Gran/Source/MainComponent.s"
+	@echo "... home/goolue/programming/audio/Gran/Source/ThumbnailComponent.o"
+	@echo "... home/goolue/programming/audio/Gran/Source/ThumbnailComponent.i"
+	@echo "... home/goolue/programming/audio/Gran/Source/ThumbnailComponent.s"
 .PHONY : help
 
 

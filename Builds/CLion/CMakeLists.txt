@@ -1257,7 +1257,7 @@ add_executable (APP
     "../../JuceLibraryCode/include_juce_opengl.cpp"
     "../../JuceLibraryCode/include_juce_video.cpp"
     "../../JuceLibraryCode/JuceHeader.h"
-)
+        ../../Source/ThumbnailComponent.cpp ../../Source/ThumbnailComponent.h ../../Source/ReferenceCountedBuffer.h)
 
 set_source_files_properties ("../../Source/MainComponent.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../../../../JUCE/modules/juce_audio_basics/audio_play_head/juce_AudioPlayHead.h" PROPERTIES HEADER_FILE_ONLY TRUE)
