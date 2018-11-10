@@ -51,7 +51,6 @@ private:
     void playBtnClicked();
     void changeState(PlayState newState);
     void checkForBuffersToFree();
-    void checkForFileToOpen();
 
     void paintThumbnailIfFileWasLoaded(Graphics &g, const Colour &backgroundColour, const Rectangle<int> &thumbnailBounds);
 
@@ -64,7 +63,6 @@ private:
     AudioThumbnailCache thumbnailCache;
     AudioThumbnail thumbnail;
 
-    String filePath;
     bool fileLoaded = false;
     ReferenceCountedArray<ReferenceCountedBuffer> buffers;
     ReferenceCountedBuffer::Ptr currentBuffer;

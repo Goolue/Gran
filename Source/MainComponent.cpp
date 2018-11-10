@@ -7,6 +7,7 @@
 */
 
 #include "MainComponent.h"
+#include "future"
 
 //==============================================================================
 MainComponent::MainComponent() : Thread("MainThread", 0), thumbnailCache(5),
@@ -38,7 +39,6 @@ MainComponent::MainComponent() : Thread("MainThread", 0), thumbnailCache(5),
 
 void MainComponent::run() {
     while (!threadShouldExit()) {
-        checkForFileToOpen();
         checkForBuffersToFree();
         wait(500);
     }
@@ -50,28 +50,6 @@ void MainComponent::checkForBuffersToFree() {
         ReferenceCountedBuffer::Ptr buffer(buffers.getUnchecked(i));
         if (buffer->getReferenceCount() == 2) {
             buffers.remove(i);
-        }
-    }
-}
-
-void MainComponent::checkForFileToOpen() {
-    String pathToOpen;
-    pathToOpen.swapWith(filePath);
-
-    if (pathToOpen.isNotEmpty()) {
-        File file(pathToOpen);
-        std::unique_ptr<AudioFormatReader> reader(formatManager.createReaderFor (file));
-        if (reader != nullptr) {
-            ReferenceCountedBuffer::Ptr newBuffer = new ReferenceCountedBuffer(file.getFileName(),
-                                                                               reader->numChannels,
-                                                                               (int) reader->lengthInSamples);
-            reader->read(newBuffer->getAudioSampleBuffer(), 0, (int) reader->lengthInSamples, 0, true, true);
-            currentBuffer = newBuffer;
-            buffers.add(newBuffer);
-            thumbnail.setSource(new FileInputSource(file));
-            fileLoaded = true;
-            setAudioChannels(0, reader->numChannels);
-            fileLoaded = true;
         }
     }
 }
@@ -187,9 +165,23 @@ void MainComponent::openFileBtnClicked() {
                         File::getSpecialLocation(File::currentExecutableFile), "*.wav");
     if (chooser.browseForFileToOpen()) {
         File file(chooser.getResult());
-        auto path = file.getFullPathName();
-        filePath.swapWith(path);
-        notify();
+        auto future = std::async([&]{
+            std::unique_ptr<AudioFormatReader> reader(formatManager.createReaderFor (file));
+            if (reader != nullptr) {
+                ReferenceCountedBuffer::Ptr newBuffer = new ReferenceCountedBuffer(file.getFileName(),
+                                                                                   reader->numChannels,
+                                                                                   (int) reader->lengthInSamples);
+                reader->read(newBuffer->getAudioSampleBuffer(), 0, (int) reader->lengthInSamples, 0, true, true);
+                currentBuffer = newBuffer;
+                buffers.add(newBuffer);
+                thumbnail.setSource(new FileInputSource(file));
+                fileLoaded = true;
+                setAudioChannels(0, reader->numChannels);
+                fileLoaded = true;
+            }
+        });
+
+
     }
 }
 
