@@ -12,7 +12,6 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ef987a72-63b8-4145-b069-6da4fe255549" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../Source/MainComponent.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/MainComponent.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../Source/MainComponent.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/MainComponent.h" afterDir="false" />
     </list>
@@ -54,13 +53,13 @@
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="Makefile" value="1" />
-          <entry key="cpp" value="1761" />
-          <entry key="h" value="318" />
+          <entry key="cpp" value="1778" />
+          <entry key="h" value="322" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="ObjectiveC" value="2079" />
+          <entry key="ObjectiveC" value="2100" />
           <entry key="PLAIN_TEXT" value="1" />
         </counts>
       </usages-collector>
@@ -68,20 +67,20 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/../../Source/MainComponent.h">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="465">
-              <caret line="66" column="28" selection-start-line="66" selection-start-column="28" selection-end-line="66" selection-end-column="28" />
+            <state relative-caret-position="660">
+              <caret line="59" column="20" lean-forward="true" selection-start-line="59" selection-start-column="20" selection-end-line="59" selection-end-column="20" />
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/../../Source/MainComponent.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="540">
-              <caret line="127" column="71" lean-forward="true" selection-start-line="127" selection-start-column="71" selection-end-line="127" selection-end-column="71" />
+            <state relative-caret-position="1725">
+              <caret line="171" selection-start-line="171" selection-end-line="171" />
               <folding>
                 <element signature="e#0#203#0" />
                 <element signature="e#233#1419#0" />
@@ -89,7 +88,6 @@
                 <element signature="e#1732#1857#0" />
                 <element signature="e#2989#3227#0" />
                 <element signature="e#4646#4884#0" />
-                <element signature="e#6523#6577#0" />
               </folding>
             </state>
           </provider>
@@ -120,8 +118,8 @@
       <list>
         <option value="$PROJECT_DIR$/../../Source/Main.cpp" />
         <option value="$PROJECT_DIR$/cmake-build-debug/Makefile" />
-        <option value="$PROJECT_DIR$/../../Source/MainComponent.h" />
         <option value="$PROJECT_DIR$/../../Source/MainComponent.cpp" />
+        <option value="$PROJECT_DIR$/../../Source/MainComponent.h" />
       </list>
     </option>
   </component>
@@ -222,12 +220,12 @@
       <workItem from="1541581363003" duration="10000" />
       <workItem from="1541581471091" duration="623000" />
       <workItem from="1541584711992" duration="12200000" />
-      <workItem from="1541860370853" duration="1504000" />
+      <workItem from="1541860370853" duration="1676000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="14337000" />
+    <option name="totallyTimeSpent" value="14509000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-1" y="0" width="1922" height="1045" extended-state="6" />
@@ -328,17 +326,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../../Source/MainComponent.h">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="465">
-          <caret line="66" column="28" selection-start-line="66" selection-start-column="28" selection-end-line="66" selection-end-column="28" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/../../Source/MainComponent.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="540">
-          <caret line="127" column="71" lean-forward="true" selection-start-line="127" selection-start-column="71" selection-end-line="127" selection-end-column="71" />
+        <state relative-caret-position="1725">
+          <caret line="171" selection-start-line="171" selection-end-line="171" />
           <folding>
             <element signature="e#0#203#0" />
             <element signature="e#233#1419#0" />
@@ -346,8 +337,14 @@
             <element signature="e#1732#1857#0" />
             <element signature="e#2989#3227#0" />
             <element signature="e#4646#4884#0" />
-            <element signature="e#6523#6577#0" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../Source/MainComponent.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="660">
+          <caret line="59" column="20" lean-forward="true" selection-start-line="59" selection-start-column="20" selection-end-line="59" selection-end-column="20" />
         </state>
       </provider>
     </entry>

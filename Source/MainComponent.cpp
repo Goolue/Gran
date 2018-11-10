@@ -16,7 +16,6 @@ MainComponent::MainComponent() : thumbnailCache(5), thumbnail(1024, formatManage
 
     // specify the number of input and output channels that we want to open
     setAudioChannels(0, 2);
-    startTimer(40);
 
     formatManager.registerBasicFormats();
 
@@ -35,17 +34,10 @@ MainComponent::MainComponent() : thumbnailCache(5), thumbnail(1024, formatManage
     playBtn.setBounds(openFileBtn.getRight() + 5, openFileBtn.getY(), 100, 100);
 
     thumbnail.addChangeListener(this);
-    transportSource.addChangeListener(this);
-    transportSource.setGain(0.5f);
 }
 
 void MainComponent::changeListenerCallback(ChangeBroadcaster *source) {
     if (source == &thumbnail) repaint();
-    else if (source == &transportSource) {
-        if (transportSource.getCurrentPosition() == transportSource.getLengthInSeconds()) {
-            transportSource.setPosition(0);
-        }
-    }
 }
 
 MainComponent::~MainComponent() {
@@ -62,7 +54,6 @@ void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate
     // but be careful - it will be called on the audio thread, not the GUI thread.
 
     // For more details, see the help for AudioProcessor::prepareToPlay()
-//    transportSource.prepareToPlay(samplesPerBlockExpected, sampleRate);
 
 }
 
@@ -126,11 +117,6 @@ void MainComponent::paintThumbnailIfFileWasLoaded(Graphics &g, const Colour &bac
     auto audioLength(thumbnail.getTotalLength());
     g.setColour(Colours::red);
     thumbnail.drawChannels(g, thumbnailBounds, 0.0, audioLength, 1.0f);
-//    g.setColour(Colours::green);
-//    auto audioPosition(position);
-//    auto drawPosition = (float) ((audioPosition / audioLength) * thumbnailBounds.getWidth() + thumbnailBounds.getX());
-//    g.drawLine(drawPosition, thumbnailBounds.getY(), drawPosition, thumbnailBounds.getBottom(), 2.0f);
-
 }
 
 void MainComponent::resized() {
@@ -155,11 +141,7 @@ void MainComponent::openFileBtnClicked() {
             fileBuffer.setSize(reader->numChannels, static_cast<int>(reader->lengthInSamples));
             reader->read(&fileBuffer, 0, static_cast<int>(reader->lengthInSamples), 0, true, true);
             std::unique_ptr<AudioFormatReaderSource> newSource(new AudioFormatReaderSource(reader, true));
-//            transportSource.setSource(newSource.get(), 0, nullptr, reader->sampleRate);
-//            transportSource.setLooping(true);
-//            std::cout << "source len is: " << transportSource.getLengthInSeconds() << std::endl;
             thumbnail.setSource(new FileInputSource(file));
-            readerSource = std::move(newSource);
 
             position = 0;
             setAudioChannels(0, reader->numChannels); // also starts the audio again
@@ -176,24 +158,5 @@ void MainComponent::playBtnClicked() {
 }
 
 void MainComponent::changeState(PlayState newState) {
-    if (state != newState) {
-        state = newState;
-        switch (newState) {
-            case Stop:
-            case Pause:
-                //TODO
-//                std::cout << "starting " << transportSource.getCurrentPosition() << std::endl;
-//                transportSource.start();
-                break;
-            case Play:
-                //TODO
-//                std::cout << "stopping " << transportSource.getCurrentPosition() << std::endl;
-//                transportSource.stop();
-                break;
-        }
-    }
-}
-
-void MainComponent::timerCallback() {
-    repaint();
+    state = newState;
 }

@@ -21,7 +21,7 @@ enum PlayState {
     This component lives inside our window, and this is where you should put all
     your controls and content.
 */
-class MainComponent : public AudioAppComponent, public ChangeListener, private Timer {
+class MainComponent : public AudioAppComponent, public ChangeListener {
 public:
     //==============================================================================
     MainComponent();
@@ -56,9 +56,7 @@ private:
     TextButton openFileBtn;
     ToggleButton playBtn;
 
-    AudioFormatManager formatManager; // TODO maybe remove
-    std::unique_ptr<AudioFormatReaderSource> readerSource;
-    AudioTransportSource transportSource; // TODO remove
+    AudioFormatManager formatManager;
     PlayState state;
     AudioThumbnailCache thumbnailCache;
     AudioThumbnail thumbnail;
@@ -69,6 +67,4 @@ private:
 
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
-
-    void timerCallback() override;
 };
