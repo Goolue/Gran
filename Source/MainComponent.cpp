@@ -10,18 +10,10 @@
 #include "future"
 
 //==============================================================================
-MainComponent::MainComponent() : Thread("MainThread", 0), thumbnailCache(5),
-                                 thumbnail(1024, formatManager, thumbnailCache), state(Stop), buffers() {
+MainComponent::MainComponent() : Thread("MainThread", 0), state(Stop), buffers(), thumbnailComponent() {
     // Make sure you set the size of the component after
     // you add any child components.
     setSize(800, 600);
-
-    formatManager.registerBasicFormats();
-
-    addAndMakeVisible(&openFileBtn);
-    openFileBtn.setButtonText("Open file");
-    openFileBtn.setVisible(true);
-    openFileBtn.onClick = [this] { openFileBtnClicked(); };
 
     addAndMakeVisible(&playBtn);
     playBtn.setButtonText("Play / Pause");
@@ -30,9 +22,11 @@ MainComponent::MainComponent() : Thread("MainThread", 0), thumbnailCache(5),
     playBtn.setColour(ToggleButton::tickDisabledColourId, Colours::red);
     playBtn.setEnabled(false);
     playBtn.onClick = [this] { playBtnClicked(); };
-    playBtn.setBounds(openFileBtn.getRight() + 5, openFileBtn.getY(), 100, 100);
+    playBtn.setBounds(5, 5, 100, 100);
 
-    thumbnail.addChangeListener(this);
+    addAndMakeVisible(&thumbnailComponent);
+    thumbnailComponent.setVisible(true);
+    thumbnailComponent.setBounds(playBtn.getX(), playBtn.getBottom() + 5, 780, 400);
 
     startThread();
 }
@@ -52,10 +46,6 @@ void MainComponent::checkForBuffersToFree() {
             buffers.remove(i);
         }
     }
-}
-
-void MainComponent::changeListenerCallback(ChangeBroadcaster *source) {
-    if (source == &thumbnail) repaint();
 }
 
 MainComponent::~MainComponent() {
@@ -83,40 +73,40 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo &bufferToFill
     // Right now we are not producing any data, in which case we need to clear the buffer
     // (to prevent the output of random noise)
 
-    if (fileLoaded && state == Play) {
-        ReferenceCountedBuffer::Ptr retainedCurrentBuffer(currentBuffer);
-        if (retainedCurrentBuffer == nullptr) {
-            bufferToFill.clearActiveBufferRegion();
-            return;
-        }
-        auto *currentAudioSampleBuffer = retainedCurrentBuffer->getAudioSampleBuffer();
-        auto position = retainedCurrentBuffer->position;
-        auto numInputChannels = currentAudioSampleBuffer->getNumChannels();
-        auto numOutputChannels = bufferToFill.buffer->getNumChannels();
-        auto outputSamplesRemaining = bufferToFill.numSamples;
-        auto outputSamplesOffset = 0;
-        while (outputSamplesRemaining > 0) {
-            auto bufferSamplesRemaining = currentAudioSampleBuffer->getNumSamples() - position;
-            auto samplesThisTime = jmin(outputSamplesRemaining, bufferSamplesRemaining);
-            for (auto channel = 0; channel < numOutputChannels; ++channel) {
-                bufferToFill.buffer->copyFrom(channel,
-                                              bufferToFill.startSample + outputSamplesOffset,
-                                              *currentAudioSampleBuffer,
-                                              channel % numInputChannels,
-                                              position,
-                                              samplesThisTime);
-            }
-            outputSamplesRemaining -= samplesThisTime;
-            outputSamplesOffset += samplesThisTime;
-            position += samplesThisTime;
-            if (position == currentAudioSampleBuffer->getNumSamples()) {
-                position = 0;
-            }
-        }
-        retainedCurrentBuffer->position = position;
-    } else {
+//    if (fileLoaded && state == Play) {
+//        ReferenceCountedBuffer::Ptr retainedCurrentBuffer(currentBuffer);
+//        if (retainedCurrentBuffer == nullptr) {
+//            bufferToFill.clearActiveBufferRegion();
+//            return;
+//        }
+//        auto *currentAudioSampleBuffer = retainedCurrentBuffer->getAudioSampleBuffer();
+//        auto position = retainedCurrentBuffer->position;
+//        auto numInputChannels = currentAudioSampleBuffer->getNumChannels();
+//        auto numOutputChannels = bufferToFill.buffer->getNumChannels();
+//        auto outputSamplesRemaining = bufferToFill.numSamples;
+//        auto outputSamplesOffset = 0;
+//        while (outputSamplesRemaining > 0) {
+//            auto bufferSamplesRemaining = currentAudioSampleBuffer->getNumSamples() - position;
+//            auto samplesThisTime = jmin(outputSamplesRemaining, bufferSamplesRemaining);
+//            for (auto channel = 0; channel < numOutputChannels; ++channel) {
+//                bufferToFill.buffer->copyFrom(channel,
+//                                              bufferToFill.startSample + outputSamplesOffset,
+//                                              *currentAudioSampleBuffer,
+//                                              channel % numInputChannels,
+//                                              position,
+//                                              samplesThisTime);
+//            }
+//            outputSamplesRemaining -= samplesThisTime;
+//            outputSamplesOffset += samplesThisTime;
+//            position += samplesThisTime;
+//            if (position == currentAudioSampleBuffer->getNumSamples()) {
+//                position = 0;
+//            }
+//        }
+//        retainedCurrentBuffer->position = position;
+//    } else {
         bufferToFill.clearActiveBufferRegion();
-    }
+//    }
 }
 
 void MainComponent::releaseResources() {
@@ -133,56 +123,12 @@ void MainComponent::paint(Graphics &g) {
     g.fillAll(backgroundColour);
 
     // You can add your drawing code here!
-
-    Rectangle<int> thumbnailBounds(10, 100, getWidth() - 20, getHeight() - 120);
-    if (thumbnail.getNumChannels() > 0) {
-        paintThumbnailIfFileWasLoaded(g, backgroundColour, thumbnailBounds);
-    } else {
-        g.drawFittedText("No file was loaded!", thumbnailBounds, Justification::centred, 2);
-    }
-}
-
-void MainComponent::paintThumbnailIfFileWasLoaded(Graphics &g, const Colour &backgroundColour,
-                                                  const Rectangle<int> &thumbnailBounds) {
-    g.setColour(backgroundColour);
-    auto audioLength(thumbnail.getTotalLength());
-    g.setColour(Colours::red);
-    thumbnail.drawChannels(g, thumbnailBounds, 0.0, audioLength, 1.0f);
 }
 
 void MainComponent::resized() {
     // This is called when the MainContentComponent is resized.
     // If you add any child components, this is where you should
     // update their positions.
-
-    openFileBtn.setBounds(0, 0, 100, 100);
-
-}
-
-void MainComponent::openFileBtnClicked() {
-    playBtn.setEnabled(true);
-    FileChooser chooser("Select a Wave file to play...",
-                        File::getSpecialLocation(File::currentExecutableFile), "*.wav");
-    if (chooser.browseForFileToOpen()) {
-        File file(chooser.getResult());
-        auto future = std::async([&]{
-            std::unique_ptr<AudioFormatReader> reader(formatManager.createReaderFor (file));
-            if (reader != nullptr) {
-                ReferenceCountedBuffer::Ptr newBuffer = new ReferenceCountedBuffer(file.getFileName(),
-                                                                                   reader->numChannels,
-                                                                                   (int) reader->lengthInSamples);
-                reader->read(newBuffer->getAudioSampleBuffer(), 0, (int) reader->lengthInSamples, 0, true, true);
-                currentBuffer = newBuffer;
-                buffers.add(newBuffer);
-                thumbnail.setSource(new FileInputSource(file));
-                fileLoaded = true;
-                setAudioChannels(0, reader->numChannels);
-                fileLoaded = true;
-            }
-        });
-
-
-    }
 }
 
 void MainComponent::playBtnClicked() {

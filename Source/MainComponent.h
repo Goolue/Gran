@@ -10,19 +10,15 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "ReferenceCountedBuffer.h"
+#include "PlayState.h"
+#include "ThumbnailComponent.h"
 
 //==============================================================================
-enum PlayState {
-    Play,
-    Stop,
-    Pause
-};
-
 /*
     This component lives inside our window, and this is where you should put all
     your controls and content.
 */
-class MainComponent : public AudioAppComponent, public ChangeListener, private Thread {
+class MainComponent : public AudioAppComponent, private Thread {
 public:
     //==============================================================================
     MainComponent();
@@ -41,32 +37,23 @@ public:
 
     void resized() override;
 
-    void changeListenerCallback(ChangeBroadcaster *source) override;
-
 private:
     // Your private member variables go here...
 
     //==============================================================================
-    void openFileBtnClicked();
+//    void changeState(PlayState newState);
     void playBtnClicked();
-    void changeState(PlayState newState);
     void checkForBuffersToFree();
-
-    void paintThumbnailIfFileWasLoaded(Graphics &g, const Colour &backgroundColour, const Rectangle<int> &thumbnailBounds);
+    void changeState(PlayState newState);
 
     //==============================================================================
-    TextButton openFileBtn;
     ToggleButton playBtn;
-
-    AudioFormatManager formatManager;
     PlayState state;
-    AudioThumbnailCache thumbnailCache;
-    AudioThumbnail thumbnail;
 
-    bool fileLoaded = false;
     ReferenceCountedArray<ReferenceCountedBuffer> buffers;
     ReferenceCountedBuffer::Ptr currentBuffer;
 
+    ThumbnailComponent thumbnailComponent;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 
