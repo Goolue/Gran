@@ -1,0 +1,3 @@
+[submodule "include/observable"]
+	path = include/observable
+	url = https://github.com/ddinu/observable.git

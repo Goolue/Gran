@@ -1,3 +1,0 @@
-/home/goolue/programming/audio/Gran/Builds/CLion/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/goolue/programming/audio/Gran/Builds/CLion/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/home/goolue/programming/audio/Gran/Builds/CLion/cmake-build-debug/CMakeFiles/APP.dir
