@@ -4,17 +4,23 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "PlayState.h"
+#include <observable/observable.hpp>
+
+using namespace std;
 
 class ThumbnailComponent : public Component, public ChangeListener {
+
+    OBSERVABLE_PROPERTIES(ThumbnailComponent)
+
 public:
     // methods:
-    ThumbnailComponent();
+    ThumbnailComponent(AudioFormatManager* formatManager);
     ~ThumbnailComponent();
 
     void paint(Graphics &g) override;
     void changeListenerCallback(ChangeBroadcaster *source) override;
 
-    bool wasFileLoaded() const;
+    observable_property<File> file; // cannot be changed from outside this class
 
 private:
 
@@ -26,8 +32,9 @@ private:
     const int THUMBNAIL_NUM_SAMPLES = 512;
     bool fileLoaded = false;
 
+
     TextButton openFileBtn;
-    AudioFormatManager formatManager;
+    shared_ptr<AudioFormatManager> formatManager;
     AudioThumbnailCache thumbnailCache;
     AudioThumbnail thumbnail;
 

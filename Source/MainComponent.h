@@ -45,17 +45,18 @@ private:
     void playBtnClicked();
     void checkForBuffersToFree();
     void changeState(PlayState newState);
+    void run() override;
 
     //==============================================================================
     ToggleButton playBtn;
     PlayState state;
+    bool fileLoaded = false;
 
+    AudioFormatManager formatManager;
     ReferenceCountedArray<ReferenceCountedBuffer> buffers;
     ReferenceCountedBuffer::Ptr currentBuffer;
 
     ThumbnailComponent thumbnailComponent;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
-
-    void run() override;
 };

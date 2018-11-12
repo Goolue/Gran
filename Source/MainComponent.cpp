@@ -9,11 +9,15 @@
 #include "MainComponent.h"
 #include "future"
 
+using namespace std;
+
 //==============================================================================
-MainComponent::MainComponent() : Thread("MainThread", 0), state(Stop), buffers(), thumbnailComponent() {
+MainComponent::MainComponent() : Thread("MainThread", 0), state(Stop), buffers(), thumbnailComponent(&formatManager) {
     // Make sure you set the size of the component after
     // you add any child components.
     setSize(800, 600);
+
+    formatManager.registerBasicFormats();
 
     addAndMakeVisible(&playBtn);
     playBtn.setButtonText("Play / Pause");
@@ -27,6 +31,23 @@ MainComponent::MainComponent() : Thread("MainThread", 0), state(Stop), buffers()
     addAndMakeVisible(&thumbnailComponent);
     thumbnailComponent.setVisible(true);
     thumbnailComponent.setBounds(playBtn.getX(), playBtn.getBottom() + 5, 780, 400);
+
+    thumbnailComponent.file.subscribe([&](auto const& file) {
+        const String& fileName = file.getFileName();
+        cout << "in file subscribe callback, file: " << fileName << endl;
+        unique_ptr<AudioFormatReader> reader(formatManager.createReaderFor(file));
+        if (reader != nullptr) {
+            fileLoaded = true;
+            playBtn.setEnabled(true);
+            ReferenceCountedBuffer::Ptr newBuffer = new ReferenceCountedBuffer(fileName,
+                                                                               reader->numChannels,
+                                                                               (int) reader->lengthInSamples);
+            reader->read(newBuffer->getAudioSampleBuffer(), 0, (int) reader->lengthInSamples, 0, true, true);
+            currentBuffer = newBuffer;
+            buffers.add(newBuffer);
+            setAudioChannels(0, reader->numChannels);
+        }
+    });
 
     startThread();
 }
@@ -73,40 +94,40 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo &bufferToFill
     // Right now we are not producing any data, in which case we need to clear the buffer
     // (to prevent the output of random noise)
 
-//    if (fileLoaded && state == Play) {
-//        ReferenceCountedBuffer::Ptr retainedCurrentBuffer(currentBuffer);
-//        if (retainedCurrentBuffer == nullptr) {
-//            bufferToFill.clearActiveBufferRegion();
-//            return;
-//        }
-//        auto *currentAudioSampleBuffer = retainedCurrentBuffer->getAudioSampleBuffer();
-//        auto position = retainedCurrentBuffer->position;
-//        auto numInputChannels = currentAudioSampleBuffer->getNumChannels();
-//        auto numOutputChannels = bufferToFill.buffer->getNumChannels();
-//        auto outputSamplesRemaining = bufferToFill.numSamples;
-//        auto outputSamplesOffset = 0;
-//        while (outputSamplesRemaining > 0) {
-//            auto bufferSamplesRemaining = currentAudioSampleBuffer->getNumSamples() - position;
-//            auto samplesThisTime = jmin(outputSamplesRemaining, bufferSamplesRemaining);
-//            for (auto channel = 0; channel < numOutputChannels; ++channel) {
-//                bufferToFill.buffer->copyFrom(channel,
-//                                              bufferToFill.startSample + outputSamplesOffset,
-//                                              *currentAudioSampleBuffer,
-//                                              channel % numInputChannels,
-//                                              position,
-//                                              samplesThisTime);
-//            }
-//            outputSamplesRemaining -= samplesThisTime;
-//            outputSamplesOffset += samplesThisTime;
-//            position += samplesThisTime;
-//            if (position == currentAudioSampleBuffer->getNumSamples()) {
-//                position = 0;
-//            }
-//        }
-//        retainedCurrentBuffer->position = position;
-//    } else {
+    if (fileLoaded && state == Play) {
+        ReferenceCountedBuffer::Ptr retainedCurrentBuffer(currentBuffer);
+        if (retainedCurrentBuffer == nullptr) {
+            bufferToFill.clearActiveBufferRegion();
+            return;
+        }
+        auto *currentAudioSampleBuffer = retainedCurrentBuffer->getAudioSampleBuffer();
+        auto position = retainedCurrentBuffer->position;
+        auto numInputChannels = currentAudioSampleBuffer->getNumChannels();
+        auto numOutputChannels = bufferToFill.buffer->getNumChannels();
+        auto outputSamplesRemaining = bufferToFill.numSamples;
+        auto outputSamplesOffset = 0;
+        while (outputSamplesRemaining > 0) {
+            auto bufferSamplesRemaining = currentAudioSampleBuffer->getNumSamples() - position;
+            auto samplesThisTime = jmin(outputSamplesRemaining, bufferSamplesRemaining);
+            for (auto channel = 0; channel < numOutputChannels; ++channel) {
+                bufferToFill.buffer->copyFrom(channel,
+                                              bufferToFill.startSample + outputSamplesOffset,
+                                              *currentAudioSampleBuffer,
+                                              channel % numInputChannels,
+                                              position,
+                                              samplesThisTime);
+            }
+            outputSamplesRemaining -= samplesThisTime;
+            outputSamplesOffset += samplesThisTime;
+            position += samplesThisTime;
+            if (position == currentAudioSampleBuffer->getNumSamples()) {
+                position = 0;
+            }
+        }
+        retainedCurrentBuffer->position = position;
+    } else {
         bufferToFill.clearActiveBufferRegion();
-//    }
+    }
 }
 
 void MainComponent::releaseResources() {
@@ -132,13 +153,13 @@ void MainComponent::resized() {
 }
 
 void MainComponent::playBtnClicked() {
-    std::cout << "playBtnClicked " << "state is now " << playBtn.getToggleState() << std::endl;
+    cout << "playBtnClicked " << "state is now " << playBtn.getToggleState() << endl;
     if (playBtn.getToggleState()) {
         changeState(Play);
     } else changeState(Stop);
 }
 
 void MainComponent::changeState(PlayState newState) {
-    std::cout << "state is " << state << " changing state to " << newState << std::endl;
+    cout << "state is " << state << " changing state to " << newState << endl;
     state = newState;
 }
