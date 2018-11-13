@@ -12,68 +12,73 @@
 using namespace std;
 
 //==============================================================================
-MainComponent::MainComponent() : Thread("MainThread", 0), state(Stop), buffers(), formatManager(new AudioFormatManager),
-                                 thumbnailComponent(formatManager) {
+MainComponent::MainComponent() :formatManager(new AudioFormatManager),
+                                 thumbnailComponent(formatManager), playComponent(&thumbnailComponent.file, formatManager) {
     // Make sure you set the size of the component after
     // you add any child components.
     setSize(800, 600);
 
     formatManager->registerBasicFormats();
 
-    addAndMakeVisible(&playBtn);
-    playBtn.setButtonText("Play / Pause");
-    playBtn.setVisible(true);
-    playBtn.setColour(ToggleButton::tickColourId, Colours::green);
-    playBtn.setColour(ToggleButton::tickDisabledColourId, Colours::red);
-    playBtn.setEnabled(false);
-    playBtn.onClick = [this] { playBtnClicked(); };
-    playBtn.setBounds(5, 5, 100, 100);
+//    addAndMakeVisible(&playBtn);
+//    playBtn.setButtonText("Play / Pause");
+//    playBtn.setVisible(true);
+//    playBtn.setColour(ToggleButton::tickColourId, Colours::green);
+//    playBtn.setColour(ToggleButton::tickDisabledColourId, Colours::red);
+//    playBtn.setEnabled(false);
+//    playBtn.onClick = [this] { playBtnClicked(); };
+//    playBtn.setBounds(5, 5, 100, 100);
+
+    addAndMakeVisible(&playComponent);
+    playComponent.setBounds(0, 0, 100, 100);
 
     addAndMakeVisible(&thumbnailComponent);
     thumbnailComponent.setVisible(true);
-    thumbnailComponent.setBounds(playBtn.getX(), playBtn.getBottom() + 5, 780, 400);
+    thumbnailComponent.setBounds(playComponent.getX(), playComponent.getBottom() + 5, 780, 400);
 
-    thumbnailComponent.file.subscribe([&](auto const& file) {
-        const String& fileName = file.getFileName();
-        cout << "in file subscribe callback, file: " << fileName << endl;
+    subscription = thumbnailComponent.file.subscribe([&](auto const& file) {
+//        const String& fileName = file.getFileName();
+//        cout << "in file subscribe callback, file: " << fileName << endl;
         unique_ptr<AudioFormatReader> reader(formatManager->createReaderFor(file));
         if (reader != nullptr) {
-            fileLoaded = true;
-            playBtn.setEnabled(true);
-            ReferenceCountedBuffer::Ptr newBuffer = new ReferenceCountedBuffer(fileName,
-                                                                               reader->numChannels,
-                                                                               (int) reader->lengthInSamples);
-            reader->read(newBuffer->getAudioSampleBuffer(), 0, (int) reader->lengthInSamples, 0, true, true);
-            currentBuffer = newBuffer;
-            buffers.add(newBuffer);
+//            fileLoaded = true;
+//            playBtn.setEnabled(true);
+//            ReferenceCountedBuffer::Ptr newBuffer = new ReferenceCountedBuffer(fileName,
+//                                                                               reader->numChannels,
+//                                                                               (int) reader->lengthInSamples);
+//            reader->read(newBuffer->getAudioSampleBuffer(), 0, (int) reader->lengthInSamples, 0, true, true);
+//            currentBuffer = newBuffer;
+//            buffers.add(newBuffer);
             setAudioChannels(0, reader->numChannels);
         }
     });
 
-    startThread();
+//    startThread();
 }
 
-void MainComponent::run() {
-    while (!threadShouldExit()) {
-        checkForBuffersToFree();
-        wait(500);
-    }
+//void MainComponent::run() {
+//    while (!threadShouldExit()) {
+//        checkForBuffersToFree();
+//        wait(500);
+//    }
+//
+//}
 
-}
-
-void MainComponent::checkForBuffersToFree() {
-    for (int i = buffers.size() - 1; i > 0; --i) {
-        ReferenceCountedBuffer::Ptr buffer(buffers.getUnchecked(i));
-        if (buffer->getReferenceCount() == 2) {
-            buffers.remove(i);
-        }
-    }
-}
+//void MainComponent::checkForBuffersToFree() {
+//    for (int i = buffers.size() - 1; i > 0; --i) {
+//        ReferenceCountedBuffer::Ptr buffer(buffers.getUnchecked(i));
+//        if (buffer->getReferenceCount() == 2) {
+//            buffers.remove(i);
+//        }
+//    }
+//}
 
 MainComponent::~MainComponent() {
     // This shuts down the audio device and clears the audio source.
     shutdownAudio();
-    stopThread(1000);
+//    stopThread(1000);
+
+    subscription.unsubscribe();
 }
 
 //==============================================================================
@@ -96,40 +101,7 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
     // Right now we are not producing any data, in which case we need to clear the buffer
     // (to prevent the output of random noise)
 
-    if (fileLoaded && state == Play) {
-        ReferenceCountedBuffer::Ptr retainedCurrentBuffer(currentBuffer);
-        if (retainedCurrentBuffer == nullptr) {
-            bufferToFill.clearActiveBufferRegion();
-            return;
-        }
-        auto* currentAudioSampleBuffer = retainedCurrentBuffer->getAudioSampleBuffer();
-        auto position = retainedCurrentBuffer->position;
-        auto numInputChannels = currentAudioSampleBuffer->getNumChannels();
-        auto numOutputChannels = bufferToFill.buffer->getNumChannels();
-        auto outputSamplesRemaining = bufferToFill.numSamples;
-        auto outputSamplesOffset = 0;
-        while (outputSamplesRemaining > 0) {
-            auto bufferSamplesRemaining = currentAudioSampleBuffer->getNumSamples() - position;
-            auto samplesThisTime = jmin(outputSamplesRemaining, bufferSamplesRemaining);
-            for (auto channel = 0; channel < numOutputChannels; ++channel) {
-                bufferToFill.buffer->copyFrom(channel,
-                                              bufferToFill.startSample + outputSamplesOffset,
-                                              *currentAudioSampleBuffer,
-                                              channel % numInputChannels,
-                                              position,
-                                              samplesThisTime);
-            }
-            outputSamplesRemaining -= samplesThisTime;
-            outputSamplesOffset += samplesThisTime;
-            position += samplesThisTime;
-            if (position == currentAudioSampleBuffer->getNumSamples()) {
-                position = 0;
-            }
-        }
-        retainedCurrentBuffer->position = position;
-    } else {
-        bufferToFill.clearActiveBufferRegion();
-    }
+    playComponent.getNextAudioBlock(bufferToFill);
 }
 
 void MainComponent::releaseResources() {
@@ -154,14 +126,14 @@ void MainComponent::resized() {
     // update their positions.
 }
 
-void MainComponent::playBtnClicked() {
-    cout << "playBtnClicked " << "state is now " << playBtn.getToggleState() << endl;
-    if (playBtn.getToggleState()) {
-        changeState(Play);
-    } else changeState(Stop);
-}
+//void MainComponent::playBtnClicked() {
+//    cout << "playBtnClicked " << "state is now " << playBtn.getToggleState() << endl;
+//    if (playBtn.getToggleState()) {
+//        changeState(Play);
+//    } else changeState(Stop);
+//}
 
-void MainComponent::changeState(PlayState newState) {
-    cout << "state is " << state << " changing state to " << newState << endl;
-    state = newState;
-}
+//void MainComponent::changeState(PlayState newState) {
+//    cout << "state is " << state << " changing state to " << newState << endl;
+//    state = newState;
+//}

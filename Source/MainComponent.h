@@ -12,13 +12,18 @@
 #include "ReferenceCountedBuffer.h"
 #include "PlayState.h"
 #include "ThumbnailComponent.h"
+#include <observable/observable.hpp>
+#include "PlayComponent.h"
+
+using namespace std;
+using namespace observable;
 
 //==============================================================================
 /*
     This component lives inside our window, and this is where you should put all
     your controls and content.
 */
-class MainComponent : public AudioAppComponent, private Thread {
+class MainComponent : public AudioAppComponent {
 public:
     //==============================================================================
     MainComponent();
@@ -42,21 +47,18 @@ private:
 
     //==============================================================================
 //    void changeState(PlayState newState);
-    void playBtnClicked();
-    void checkForBuffersToFree();
-    void changeState(PlayState newState);
-    void run() override;
+//    void playBtnClicked();
+//    void checkForBuffersToFree();
+//    void changeState(PlayState newState);
+//    void run() override;
 
     //==============================================================================
-    ToggleButton playBtn;
-    PlayState state;
-    bool fileLoaded = false;
-
     shared_ptr<AudioFormatManager> formatManager;
-    ReferenceCountedArray<ReferenceCountedBuffer> buffers;
-    ReferenceCountedBuffer::Ptr currentBuffer;
 
     ThumbnailComponent thumbnailComponent;
+    infinite_subscription subscription;
+
+    PlayComponent playComponent;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
