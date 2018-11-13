@@ -12,12 +12,13 @@
 using namespace std;
 
 //==============================================================================
-MainComponent::MainComponent() : Thread("MainThread", 0), state(Stop), buffers(), thumbnailComponent(&formatManager) {
+MainComponent::MainComponent() : Thread("MainThread", 0), state(Stop), buffers(), formatManager(new AudioFormatManager),
+                                 thumbnailComponent(formatManager) {
     // Make sure you set the size of the component after
     // you add any child components.
     setSize(800, 600);
 
-    formatManager.registerBasicFormats();
+    formatManager->registerBasicFormats();
 
     addAndMakeVisible(&playBtn);
     playBtn.setButtonText("Play / Pause");
@@ -35,7 +36,7 @@ MainComponent::MainComponent() : Thread("MainThread", 0), state(Stop), buffers()
     thumbnailComponent.file.subscribe([&](auto const& file) {
         const String& fileName = file.getFileName();
         cout << "in file subscribe callback, file: " << fileName << endl;
-        unique_ptr<AudioFormatReader> reader(formatManager.createReaderFor(file));
+        unique_ptr<AudioFormatReader> reader(formatManager->createReaderFor(file));
         if (reader != nullptr) {
             fileLoaded = true;
             playBtn.setEnabled(true);
@@ -72,6 +73,7 @@ void MainComponent::checkForBuffersToFree() {
 MainComponent::~MainComponent() {
     // This shuts down the audio device and clears the audio source.
     shutdownAudio();
+    stopThread(1000);
 }
 
 //==============================================================================
@@ -86,7 +88,7 @@ void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate
 
 }
 
-void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo &bufferToFill) {
+void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill) {
     // Your audio-processing code goes here!
 
     // For more details, see the help for AudioProcessor::getNextAudioBlock()
@@ -100,7 +102,7 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo &bufferToFill
             bufferToFill.clearActiveBufferRegion();
             return;
         }
-        auto *currentAudioSampleBuffer = retainedCurrentBuffer->getAudioSampleBuffer();
+        auto* currentAudioSampleBuffer = retainedCurrentBuffer->getAudioSampleBuffer();
         auto position = retainedCurrentBuffer->position;
         auto numInputChannels = currentAudioSampleBuffer->getNumChannels();
         auto numOutputChannels = bufferToFill.buffer->getNumChannels();
@@ -138,9 +140,9 @@ void MainComponent::releaseResources() {
 }
 
 //==============================================================================
-void MainComponent::paint(Graphics &g) {
+void MainComponent::paint(Graphics& g) {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
-    const Colour &backgroundColour = getLookAndFeel().findColour(ResizableWindow::backgroundColourId);
+    const Colour& backgroundColour = getLookAndFeel().findColour(ResizableWindow::backgroundColourId);
     g.fillAll(backgroundColour);
 
     // You can add your drawing code here!

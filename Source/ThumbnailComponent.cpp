@@ -5,7 +5,7 @@
 #include <future>
 #include "ThumbnailComponent.h"
 
-ThumbnailComponent::ThumbnailComponent(AudioFormatManager* formatManager) : thumbnailCache(5),
+ThumbnailComponent::ThumbnailComponent(shared_ptr<AudioFormatManager> formatManager) : thumbnailCache(5),
                                            thumbnail(THUMBNAIL_NUM_SAMPLES, *formatManager, thumbnailCache) {
     setSize(800, 300);
 

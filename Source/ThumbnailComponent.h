@@ -14,7 +14,7 @@ class ThumbnailComponent : public Component, public ChangeListener {
 
 public:
     // methods:
-    ThumbnailComponent(AudioFormatManager* formatManager);
+    ThumbnailComponent(shared_ptr<AudioFormatManager> formatManager);
     ~ThumbnailComponent();
 
     void paint(Graphics &g) override;
@@ -30,14 +30,12 @@ private:
 
     // vars:
     const int THUMBNAIL_NUM_SAMPLES = 512;
-    bool fileLoaded = false;
-
 
     TextButton openFileBtn;
-    shared_ptr<AudioFormatManager> formatManager;
     AudioThumbnailCache thumbnailCache;
     AudioThumbnail thumbnail;
 
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ThumbnailComponent)
 };
 
 

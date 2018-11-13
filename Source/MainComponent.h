@@ -52,7 +52,7 @@ private:
     PlayState state;
     bool fileLoaded = false;
 
-    AudioFormatManager formatManager;
+    shared_ptr<AudioFormatManager> formatManager;
     ReferenceCountedArray<ReferenceCountedBuffer> buffers;
     ReferenceCountedBuffer::Ptr currentBuffer;
 
