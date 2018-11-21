@@ -15,6 +15,10 @@ if (UNIX AND NOT APPLE)
 
     project("Gran" C CXX)
 
+    ##############
+    # OBSERVABLE #
+    ##############
+
     function(installObservable)
         message("installing observable")
 
@@ -53,8 +57,6 @@ if (UNIX AND NOT APPLE)
         # see above, setup target as well
         installObservable()
     endif ()
-
-#    target_link_libraries(observable INTERFACE observable)
 
     find_package(PkgConfig REQUIRED)
     pkg_search_module(ALSA REQUIRED alsa)

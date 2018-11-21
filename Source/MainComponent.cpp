@@ -91,6 +91,8 @@ void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate
 
     // For more details, see the help for AudioProcessor::prepareToPlay()
 
+    playComponent.prepareToPlay(samplesPerBlockExpected, sampleRate);
+
 }
 
 void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill) {

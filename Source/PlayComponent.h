@@ -5,6 +5,7 @@
 #include "PlayState.h"
 #include "ReferenceCountedBuffer.h"
 #include <observable/observable.hpp>
+#include <queue>
 
 using namespace std;
 using namespace observable;
@@ -23,8 +24,18 @@ public:
     void run() override;
 
     void getNextAudioBlock(const AudioSourceChannelInfo &bufferToFill);
+    void prepareToPlay(int samplesPerBlockExpected, double sampleRate);
 
 private:
+    // methods
+    void addBuffersToQueue();
+    ReferenceCountedBuffer::Ptr getAudioBufferFromQueue();
+
+    // vars
+    const int MAX_QUEUE_SIZE = 5;
+    deque<ReferenceCountedBuffer::Ptr> buffersQueue{};
+    int currBuffIndex = 0;
+
     TextButton playBtn;
     PlayState state{Stop};
     bool fileLoaded = false;
@@ -32,6 +43,10 @@ private:
     shared_ptr<AudioFormatManager> formatManager;
     ReferenceCountedArray<ReferenceCountedBuffer> buffers{};
     ReferenceCountedBuffer::Ptr currentBuffer;
+
+    int samplesPerBlockExpected;
+    double sampleRate;
+    int numOfChannels;
 
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PlayComponent)

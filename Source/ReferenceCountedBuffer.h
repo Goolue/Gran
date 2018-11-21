@@ -1,3 +1,5 @@
+#include <utility>
+
 //
 // Created by goolue on 11/10/18.
 //
@@ -14,8 +16,8 @@ class ReferenceCountedBuffer : public ReferenceCountedObject {
 public:
     typedef ReferenceCountedObjectPtr<ReferenceCountedBuffer> Ptr;
 
-    ReferenceCountedBuffer(const String& nameToUse, int numChannels, int numSamples)
-            : name(nameToUse), buffer(numChannels, numSamples) {
+    ReferenceCountedBuffer(String nameToUse, int numChannels, int numSamples)
+            : name(std::move(nameToUse)), buffer(numChannels, numSamples) {
         DBG (String("Buffer named '") + name + "' constructed. numChannels = " + String(numChannels) +
              ", numSamples = " + String(numSamples));
     }
