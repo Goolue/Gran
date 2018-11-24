@@ -11,12 +11,29 @@ PlayComponent::PlayComponent(value<File>* file, shared_ptr<AudioFormatManager> f
     playBtn.setColour(TextButton::buttonColourId, Colours::green);
     playBtn.onClick = [&] { playBtnClicked(); };
 
+    addAndMakeVisible(&gainSlider);
+    gainSlider.setEnabled(false);
+    gainSlider.setSliderStyle(Slider::SliderStyle::Rotary);
+    gainSlider.setName("Gain");
+    gainSlider.setBounds(105, playBtn.getY(), 100, 100);
+    gainSlider.setTextBoxIsEditable(false);
+    gainSlider.setTextBoxStyle(Slider::TextEntryBoxPosition::NoTextBox, true, 50, 50);
+    gainSlider.setPopupDisplayEnabled(true, true, this);
+    gainSlider.setMinValue(0);
+    gainSlider.setMaxValue(1);
+    gainSlider.setRange(0, 1, 0.001);
+    gainSlider.setValue(currGain);
+    gainSlider.onValueChange = [&]() {
+        currGain = gainSlider.getValue();
+    };
+
     file->subscribe([&](const auto& file) {
         const String& fileName = file.getFileName();
         cout << "in file subscribe callback, file: " << fileName << endl;
         unique_ptr<AudioFormatReader> reader(formatManager->createReaderFor(file));
         if (reader != nullptr) {
             playBtn.setEnabled(true);
+            gainSlider.setEnabled(true);
             numOfChannels = reader->numChannels;
             ReferenceCountedBuffer::Ptr newBuffer = new ReferenceCountedBuffer(fileName,
                                                                                reader->numChannels,
@@ -28,6 +45,8 @@ PlayComponent::PlayComponent(value<File>* file, shared_ptr<AudioFormatManager> f
             fileLoaded = true;
         }
     });
+
+    setSize(playBtn.getWidth() + 5 + gainSlider.getWidth(), playBtn.getHeight());
 
     startThread();
 }
@@ -169,6 +188,7 @@ void PlayComponent::addBuffersToQueue() {
                 for (int channel = 0; channel < numOfChannels; channel++) {
                     audioSampleBufferToPush->copyFrom(channel, outputSamplesOffset, *currentAudioSampleBuffer,
                                                       channel, position, samplesThisTime);
+                    audioSampleBufferToPush->applyGain(static_cast<float>(currGain));
                 }
                 outputSamplesOffset += samplesThisTime;
                 position += samplesThisTime;

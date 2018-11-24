@@ -37,6 +37,9 @@ private:
     int currBuffIndex = 0;
 
     TextButton playBtn;
+    Slider gainSlider;
+    double currGain = 0.5;
+
     PlayState state{Stop};
     bool fileLoaded = false;
 
