@@ -13,11 +13,11 @@ PlayComponent::PlayComponent(value<File>* file, shared_ptr<AudioFormatManager> f
 
     addAndMakeVisible(&gainSlider);
     gainSlider.setEnabled(false);
-    gainSlider.setSliderStyle(Slider::SliderStyle::Rotary);
+//    gainSlider.setSliderStyle(Slider::SliderStyle::Rotary);
     gainSlider.setName("Gain");
-    gainSlider.setBounds(105, playBtn.getY(), 100, 100);
+    gainSlider.setBounds(playBtn.getRight() + 5, playBtn.getY(), 100, 100);
     gainSlider.setTextBoxIsEditable(false);
-    gainSlider.setTextBoxStyle(Slider::TextEntryBoxPosition::NoTextBox, true, 50, 50);
+//    gainSlider.setTextBoxStyle(Slider::TextEntryBoxPosition::NoTextBox, true, 50, 50);
     gainSlider.setPopupDisplayEnabled(true, true, this);
     gainSlider.setMinValue(0);
     gainSlider.setMaxValue(1);
@@ -27,6 +27,45 @@ PlayComponent::PlayComponent(value<File>* file, shared_ptr<AudioFormatManager> f
         currGain = gainSlider.getValue();
     };
 
+    addAndMakeVisible(&startSlider);
+    startSlider.setEnabled(false);
+    startSlider.setName("Start");
+    startSlider.setBounds(gainSlider.getRight() + 5, gainSlider.getY(), 100, 100);
+    startSlider.setTextBoxIsEditable(false);
+    startSlider.setPopupDisplayEnabled(true, true, this);
+    startSlider.setRange(0, 1, 0.01);
+    startSlider.setValue(0);
+    startSlider.onValueChange = [&]() {
+        startVal = static_cast<int>(startSlider.getValue());
+        if(endVal.get() < startVal.get() + MIN_LEN_GAP) {
+            endVal = startVal.get() + MIN_LEN_GAP;
+            endSlider.setValue(endVal.get());
+        }
+    };
+
+    addAndMakeVisible(&endSlider);
+    endSlider.setEnabled(false);
+    endSlider.setName("End");
+    endSlider.setBounds(startSlider.getRight() + 5, startSlider.getY(), 100, 100);
+    endSlider.setTextBoxIsEditable(false);
+    endSlider.setPopupDisplayEnabled(true, true, this);
+    endSlider.setRange(0, 1, 0.01);
+    endSlider.setValue(1);
+    endSlider.onValueChange = [&]() {
+        endVal = static_cast<int>(endSlider.getValue());
+        if(endVal.get() < startVal.get() + MIN_LEN_GAP) {
+            startVal = endVal.get() - MIN_LEN_GAP;
+            startSlider.setValue(startVal.get());
+        }
+    };
+
+    startVal.subscribe_and_call([&](const int val) {
+        cout << "startVal now " << val << endl;
+    });
+    endVal.subscribe_and_call([&](const int val) {
+        cout << "endVal now " << val << endl;
+    });
+
     file->subscribe([&](const auto& file) {
         const String& fileName = file.getFileName();
         cout << "in file subscribe callback, file: " << fileName << endl;
@@ -34,6 +73,14 @@ PlayComponent::PlayComponent(value<File>* file, shared_ptr<AudioFormatManager> f
         if (reader != nullptr) {
             playBtn.setEnabled(true);
             gainSlider.setEnabled(true);
+            startSlider.setEnabled(true);
+            endSlider.setEnabled(true);
+            startSlider.setRange(0, reader->lengthInSamples - MIN_LEN_GAP, 1);
+            startVal = (int) startSlider.getValue();
+            endSlider.setRange(MIN_LEN_GAP, reader->lengthInSamples, 1);
+            endSlider.setValue(reader->lengthInSamples);
+            endVal = (int) endSlider.getValue();
+
             numOfChannels = reader->numChannels;
             ReferenceCountedBuffer::Ptr newBuffer = new ReferenceCountedBuffer(fileName,
                                                                                reader->numChannels,

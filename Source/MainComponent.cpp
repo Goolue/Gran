@@ -30,7 +30,7 @@ MainComponent::MainComponent() :formatManager(new AudioFormatManager),
 //    playBtn.setBounds(5, 5, 100, 100);
 
     addAndMakeVisible(&playComponent);
-    playComponent.setBounds(0, 0, 300, 100);
+    playComponent.setBounds(0, 0, 500, 100);
 
     addAndMakeVisible(&thumbnailComponent);
     thumbnailComponent.setVisible(true);

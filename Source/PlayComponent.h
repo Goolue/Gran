@@ -11,7 +11,7 @@ using namespace std;
 using namespace observable;
 
 class PlayComponent : public Component, private Thread {
-    OBSERVABLE_PROPERTIES(Component)
+    OBSERVABLE_PROPERTIES(PlayComponent)
 
 public:
     explicit PlayComponent(value<File>* file, shared_ptr<AudioFormatManager> formatManager);
@@ -26,6 +26,9 @@ public:
     void getNextAudioBlock(const AudioSourceChannelInfo &bufferToFill);
     void prepareToPlay(int samplesPerBlockExpected, double sampleRate);
 
+    observable_property<int> startVal;
+    observable_property<int> endVal;
+
 private:
     // methods
     void addBuffersToQueue();
@@ -37,8 +40,11 @@ private:
     int currBuffIndex = 0;
 
     TextButton playBtn;
-    Slider gainSlider;
+    Slider gainSlider{Slider::SliderStyle::Rotary, Slider::NoTextBox};
     double currGain = 0.5;
+    Slider startSlider{Slider::SliderStyle::Rotary, Slider::NoTextBox};
+    Slider endSlider{Slider::SliderStyle::Rotary, Slider::NoTextBox};
+    const int MIN_LEN_GAP = 100;
 
     PlayState state{Stop};
     bool fileLoaded = false;
