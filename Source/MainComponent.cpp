@@ -12,22 +12,14 @@
 using namespace std;
 
 //==============================================================================
-MainComponent::MainComponent() :formatManager(new AudioFormatManager),
-                                 thumbnailComponent(formatManager), playComponent(&thumbnailComponent.file, formatManager) {
+MainComponent::MainComponent() : formatManager(new AudioFormatManager),
+                                 thumbnailComponent(formatManager),
+                                 playComponent(&thumbnailComponent.file, formatManager) {
     // Make sure you set the size of the component after
     // you add any child components.
     setSize(800, 600);
 
     formatManager->registerBasicFormats();
-
-//    addAndMakeVisible(&playBtn);
-//    playBtn.setButtonText("Play / Pause");
-//    playBtn.setVisible(true);
-//    playBtn.setColour(ToggleButton::tickColourId, Colours::green);
-//    playBtn.setColour(ToggleButton::tickDisabledColourId, Colours::red);
-//    playBtn.setEnabled(false);
-//    playBtn.onClick = [this] { playBtnClicked(); };
-//    playBtn.setBounds(5, 5, 100, 100);
 
     addAndMakeVisible(&playComponent);
     playComponent.setBounds(0, 0, 500, 100);
@@ -35,25 +27,14 @@ MainComponent::MainComponent() :formatManager(new AudioFormatManager),
     addAndMakeVisible(&thumbnailComponent);
     thumbnailComponent.setVisible(true);
     thumbnailComponent.setBounds(playComponent.getX(), playComponent.getBottom() + 5, 780, 400);
+    thumbnailComponent.subscribeStartAndEnd(playComponent.startVal, playComponent.endVal);
 
-    subscription = thumbnailComponent.file.subscribe([&](auto const& file) {
-//        const String& fileName = file.getFileName();
-//        cout << "in file subscribe callback, file: " << fileName << endl;
+    subscriptions.emplace_back(thumbnailComponent.file.subscribe([&](auto const& file) {
         unique_ptr<AudioFormatReader> reader(formatManager->createReaderFor(file));
         if (reader != nullptr) {
-//            fileLoaded = true;
-//            playBtn.setEnabled(true);
-//            ReferenceCountedBuffer::Ptr newBuffer = new ReferenceCountedBuffer(fileName,
-//                                                                               reader->numChannels,
-//                                                                               (int) reader->lengthInSamples);
-//            reader->read(newBuffer->getAudioSampleBuffer(), 0, (int) reader->lengthInSamples, 0, true, true);
-//            currentBuffer = newBuffer;
-//            buffers.add(newBuffer);
             setAudioChannels(0, reader->numChannels);
         }
-    });
-
-//    startThread();
+    }));
 }
 
 //void MainComponent::run() {
@@ -78,7 +59,7 @@ MainComponent::~MainComponent() {
     shutdownAudio();
 //    stopThread(1000);
 
-    subscription.unsubscribe();
+    subscriptions.clear();
 }
 
 //==============================================================================
@@ -92,6 +73,7 @@ void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate
     // For more details, see the help for AudioProcessor::prepareToPlay()
 
     playComponent.prepareToPlay(samplesPerBlockExpected, sampleRate);
+    thumbnailComponent.setSampleRate(sampleRate);
 
 }
 

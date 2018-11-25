@@ -13,11 +13,9 @@ PlayComponent::PlayComponent(value<File>* file, shared_ptr<AudioFormatManager> f
 
     addAndMakeVisible(&gainSlider);
     gainSlider.setEnabled(false);
-//    gainSlider.setSliderStyle(Slider::SliderStyle::Rotary);
     gainSlider.setName("Gain");
     gainSlider.setBounds(playBtn.getRight() + 5, playBtn.getY(), 100, 100);
     gainSlider.setTextBoxIsEditable(false);
-//    gainSlider.setTextBoxStyle(Slider::TextEntryBoxPosition::NoTextBox, true, 50, 50);
     gainSlider.setPopupDisplayEnabled(true, true, this);
     gainSlider.setMinValue(0);
     gainSlider.setMaxValue(1);
@@ -58,13 +56,6 @@ PlayComponent::PlayComponent(value<File>* file, shared_ptr<AudioFormatManager> f
             startSlider.setValue(startVal.get());
         }
     };
-
-    startVal.subscribe_and_call([&](const int val) {
-        cout << "startVal now " << val << endl;
-    });
-    endVal.subscribe_and_call([&](const int val) {
-        cout << "endVal now " << val << endl;
-    });
 
     file->subscribe([&](const auto& file) {
         const String& fileName = file.getFileName();

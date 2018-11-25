@@ -7,6 +7,7 @@
 #include <observable/observable.hpp>
 
 using namespace std;
+using namespace observable;
 
 class ThumbnailComponent : public Component, public ChangeListener {
 
@@ -14,11 +15,13 @@ class ThumbnailComponent : public Component, public ChangeListener {
 
 public:
     // methods:
-    ThumbnailComponent(shared_ptr<AudioFormatManager> formatManager);
-    ~ThumbnailComponent();
+    explicit ThumbnailComponent(shared_ptr<AudioFormatManager> formatManager);
+    ~ThumbnailComponent() override;
 
     void paint(Graphics &g) override;
     void changeListenerCallback(ChangeBroadcaster *source) override;
+    void subscribeStartAndEnd(value<int>& startVal, value<int>& endVal);
+    void setSampleRate(double rate);
 
     observable_property<File> file; // cannot be changed from outside this class
 
@@ -34,6 +37,11 @@ private:
     TextButton openFileBtn;
     AudioThumbnailCache thumbnailCache;
     AudioThumbnail thumbnail;
+
+    double sampleRate;
+
+    double start;
+    double end;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ThumbnailComponent)
 };

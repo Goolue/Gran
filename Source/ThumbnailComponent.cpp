@@ -44,17 +44,8 @@ void ThumbnailComponent::openFileBtnClicked() {
         auto future = std::async([&] {
             file = openedFile; // notifies observers
             thumbnail.setSource(new FileInputSource(openedFile));
-//            std::unique_ptr<AudioFormatReader> reader(formatManager.createReaderFor(openedFile));
-//            if (reader != nullptr) {
-//                ReferenceCountedBuffer::Ptr newBuffer = new ReferenceCountedBuffer(openedFile.getFileName(),
-//                                                                                   reader->numChannels,
-//                                                                                   (int) reader->lengthInSamples);
-//                reader->read(newBuffer->getAudioSampleBuffer(), 0, (int) reader->lengthInSamples, 0, true, true);
-//                currentBuffer = newBuffer;
-//                buffers.add(newBuffer);
-//                fileLoaded = true;
-//                setAudioChannels(0, reader->numChannels);
-//            }
+            start = 0;
+            end = thumbnail.getTotalLength();
         });
     }
 
@@ -66,4 +57,26 @@ void ThumbnailComponent::paintThumbnailIfFileWasLoaded(Graphics& g, const Colour
     auto audioLength(thumbnail.getTotalLength());
     g.setColour(Colours::red);
     thumbnail.drawChannels(g, thumbnailBounds, 0.0, audioLength, 1.0f);
+
+    g.setColour(Colours::green);
+    auto startPosition = static_cast<float>(start / thumbnail.getTotalLength()) * thumbnailBounds.getWidth();
+    g.drawLine(startPosition, thumbnailBounds.getY(), startPosition, thumbnailBounds.getBottom(), 4.0f);
+    auto endPosition = static_cast<float>(end / thumbnail.getTotalLength()) * thumbnailBounds.getWidth();
+    g.setColour(Colours::aqua);
+    g.drawLine(endPosition, thumbnailBounds.getY(), endPosition, thumbnailBounds.getBottom(), 4.0f);
+}
+
+void ThumbnailComponent::subscribeStartAndEnd(value<int>& startVal, value<int>& endVal) {
+    startVal.subscribe([&](const int newVal) {
+        start = newVal / sampleRate;
+        repaint();
+    });
+    endVal.subscribe([&](const int newVal) {
+        end = newVal / sampleRate;
+        repaint();
+    });
+}
+
+void ThumbnailComponent::setSampleRate(const double rate) {
+    sampleRate = rate;
 }

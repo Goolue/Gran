@@ -28,7 +28,7 @@ public:
     //==============================================================================
     MainComponent();
 
-    ~MainComponent();
+    ~MainComponent() override;
 
     //==============================================================================
     void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override;
@@ -56,7 +56,7 @@ private:
     shared_ptr<AudioFormatManager> formatManager;
 
     ThumbnailComponent thumbnailComponent;
-    infinite_subscription subscription;
+    vector<unique_subscription> subscriptions{};
 
     PlayComponent playComponent;
 
