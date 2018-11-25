@@ -22,11 +22,11 @@ MainComponent::MainComponent() : formatManager(new AudioFormatManager),
     formatManager->registerBasicFormats();
 
     addAndMakeVisible(&playComponent);
-    playComponent.setBounds(0, 0, 500, 100);
+    playComponent.setBounds(0, 0, 800, 100);
 
     addAndMakeVisible(&thumbnailComponent);
     thumbnailComponent.setVisible(true);
-    thumbnailComponent.setBounds(playComponent.getX(), playComponent.getBottom() + 5, 780, 400);
+    thumbnailComponent.setBounds(playComponent.getX(), playComponent.getBottom() + 5, 1000, 400);
     thumbnailComponent.subscribeStartAndEnd(playComponent.startVal, playComponent.endVal);
 
     subscriptions.emplace_back(thumbnailComponent.file.subscribe([&](auto const& file) {

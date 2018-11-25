@@ -1,5 +1,7 @@
 #include <utility>
 
+#include <utility>
+
 #include "PlayComponent.h"
 
 PlayComponent::PlayComponent(value<File>* file, shared_ptr<AudioFormatManager> formatManagerArg) :
@@ -11,51 +13,32 @@ PlayComponent::PlayComponent(value<File>* file, shared_ptr<AudioFormatManager> f
     playBtn.setColour(TextButton::buttonColourId, Colours::green);
     playBtn.onClick = [&] { playBtnClicked(); };
 
-    addAndMakeVisible(&gainSlider);
-    gainSlider.setEnabled(false);
-    gainSlider.setName("Gain");
-    gainSlider.setBounds(playBtn.getRight() + 5, playBtn.getY(), 100, 100);
-    gainSlider.setTextBoxIsEditable(false);
-    gainSlider.setPopupDisplayEnabled(true, true, this);
-    gainSlider.setMinValue(0);
-    gainSlider.setMaxValue(1);
-    gainSlider.setRange(0, 1, 0.001);
-    gainSlider.setValue(currGain);
-    gainSlider.onValueChange = [&]() {
+    setupSlider(gainSlider, playBtn, "Gain", currGain, [&]() {
         currGain = gainSlider.getValue();
-    };
+    });
 
-    addAndMakeVisible(&startSlider);
-    startSlider.setEnabled(false);
-    startSlider.setName("Start");
-    startSlider.setBounds(gainSlider.getRight() + 5, gainSlider.getY(), 100, 100);
-    startSlider.setTextBoxIsEditable(false);
-    startSlider.setPopupDisplayEnabled(true, true, this);
-    startSlider.setRange(0, 1, 0.01);
-    startSlider.setValue(0);
-    startSlider.onValueChange = [&]() {
+    setupSlider(startSlider, gainSlider, "Start", 0, [&]() {
         startVal = static_cast<int>(startSlider.getValue());
-        if(endVal.get() < startVal.get() + MIN_LEN_GAP) {
+        if (endVal.get() < startVal.get() + MIN_LEN_GAP) {
             endVal = startVal.get() + MIN_LEN_GAP;
             endSlider.setValue(endVal.get());
         }
-    };
+    });
 
-    addAndMakeVisible(&endSlider);
-    endSlider.setEnabled(false);
-    endSlider.setName("End");
-    endSlider.setBounds(startSlider.getRight() + 5, startSlider.getY(), 100, 100);
-    endSlider.setTextBoxIsEditable(false);
-    endSlider.setPopupDisplayEnabled(true, true, this);
-    endSlider.setRange(0, 1, 0.01);
-    endSlider.setValue(1);
-    endSlider.onValueChange = [&]() {
+    setupSlider(endSlider, startSlider, "End", 1, [&]() {
         endVal = static_cast<int>(endSlider.getValue());
-        if(endVal.get() < startVal.get() + MIN_LEN_GAP) {
+        if (endVal.get() < startVal.get() + MIN_LEN_GAP) {
             startVal = endVal.get() - MIN_LEN_GAP;
             startSlider.setValue(startVal.get());
         }
-    };
+    });
+
+    setupSlider(grainSizeSlider, endSlider, "Grain size", grainSize, [&]() {
+       grainSize = static_cast<int>(grainSizeSlider.getValue());
+    });
+    grainSizeSlider.setRange(MIN_GRAIN_SIZE, MAX_GRAIN_SIZE, 10);
+    grainSizeSlider.setValue(grainSize);
+
 
     file->subscribe([&](const auto& file) {
         const String& fileName = file.getFileName();
@@ -84,9 +67,22 @@ PlayComponent::PlayComponent(value<File>* file, shared_ptr<AudioFormatManager> f
         }
     });
 
-    setSize(playBtn.getWidth() + 5 + gainSlider.getWidth(), playBtn.getHeight());
+    setSize(playBtn.getWidth() + 5 * 4 + 4 * SLIDER_WIDTH , playBtn.getHeight());
 
     startThread();
+}
+
+void PlayComponent::setupSlider(Slider& slider, Component& toPutNextTo, const string& name, const double value,
+                                function<void()> onValueChange) {
+    addAndMakeVisible(&slider);
+    slider.setEnabled(false);
+    slider.setName(name);
+    slider.setBounds(toPutNextTo.getRight() + GAP_SIZE, toPutNextTo.getY(), SLIDER_WIDTH, SLIDER_WIDTH);
+    slider.setTextBoxIsEditable(false);
+    slider.setPopupDisplayEnabled(true, true, this);
+    slider.setRange(0, 1, 0.001);
+    slider.setValue(value);
+    slider.onValueChange = std::move(onValueChange);
 }
 
 PlayComponent::~PlayComponent() {

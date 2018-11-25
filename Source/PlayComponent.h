@@ -33,18 +33,28 @@ private:
     // methods
     void addBuffersToQueue();
     ReferenceCountedBuffer::Ptr getAudioBufferFromQueue();
+    void setupSlider(Slider& slider, Component& toPutNextTo, const string& name, const double value,
+                         function<void()> onValueChange);
 
     // vars
     const int MAX_QUEUE_SIZE = 5;
     deque<ReferenceCountedBuffer::Ptr> buffersQueue{};
     int currBuffIndex = 0;
 
+    const int SLIDER_WIDTH = 100;
+    const int SLIDER_HIGHT = 100;
+    const int GAP_SIZE = 5;
     TextButton playBtn;
     Slider gainSlider{Slider::SliderStyle::Rotary, Slider::NoTextBox};
     double currGain = 0.5;
     Slider startSlider{Slider::SliderStyle::Rotary, Slider::NoTextBox};
     Slider endSlider{Slider::SliderStyle::Rotary, Slider::NoTextBox};
     const int MIN_LEN_GAP = 100;
+    Slider grainSizeSlider{Slider::SliderStyle::Rotary, Slider::NoTextBox};
+    const int MAX_GRAIN_SIZE = 2000;
+    const int MIN_GRAIN_SIZE = 100;
+    int grainSize = (MAX_GRAIN_SIZE + MIN_GRAIN_SIZE) / 2;
+
 
     PlayState state{Stop};
     bool fileLoaded = false;
