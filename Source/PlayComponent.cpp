@@ -209,7 +209,7 @@ void PlayComponent::addBuffersToQueue() {
             return;
         }
         auto currentAudioSampleBuffer = retainedCurrentBuffer->getAudioSampleBuffer();
-        auto position = retainedCurrentBuffer->position;
+        auto position = jmax(retainedCurrentBuffer->position, startVal.get());
 
         while (buffersQueue.size() < MAX_QUEUE_SIZE) {
 
@@ -220,6 +220,7 @@ void PlayComponent::addBuffersToQueue() {
 
             currBuffIndex++;
             auto outputSamplesOffset = 0;
+            auto maxSample = jmin(endVal.get(), currentAudioSampleBuffer->getNumSamples());
             while (outputSamplesOffset < audioSampleBufferToPush->getNumSamples()) {
                 auto bufferSamplesRemaining = currentAudioSampleBuffer->getNumSamples() - position;
                 auto samplesThisTime = jmin(samplesPerBlockExpected - outputSamplesOffset, bufferSamplesRemaining);
@@ -230,8 +231,8 @@ void PlayComponent::addBuffersToQueue() {
                 }
                 outputSamplesOffset += samplesThisTime;
                 position += samplesThisTime;
-                if (position >= currentAudioSampleBuffer->getNumSamples()) {
-                    position = 0;
+                if (position >= maxSample) {
+                    position = startVal.get();
                 }
             }
             retainedCurrentBuffer->position = position;
