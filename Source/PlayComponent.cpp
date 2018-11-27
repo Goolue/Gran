@@ -54,6 +54,7 @@ PlayComponent::PlayComponent(value<File>* file, shared_ptr<AudioFormatManager> f
             endSlider.setRange(MIN_LEN_GAP, reader->lengthInSamples, 1);
             endSlider.setValue(reader->lengthInSamples);
             endVal = (int) endSlider.getValue();
+            grainSizeSlider.setEnabled(true);
 
             numOfChannels = reader->numChannels;
             ReferenceCountedBuffer::Ptr newBuffer = new ReferenceCountedBuffer(fileName,
@@ -77,7 +78,7 @@ void PlayComponent::setupSlider(Slider& slider, Component& toPutNextTo, const st
     addAndMakeVisible(&slider);
     slider.setEnabled(false);
     slider.setName(name);
-    slider.setBounds(toPutNextTo.getRight() + GAP_SIZE, toPutNextTo.getY(), SLIDER_WIDTH, SLIDER_WIDTH);
+    slider.setBounds(toPutNextTo.getRight() + GAP_SIZE, toPutNextTo.getY(), SLIDER_WIDTH, SLIDER_HIGHT);
     slider.setTextBoxIsEditable(false);
     slider.setPopupDisplayEnabled(true, true, this);
     slider.setRange(0, 1, 0.001);
@@ -211,7 +212,7 @@ void PlayComponent::addBuffersToQueue() {
 
             ReferenceCountedBuffer::Ptr buffToPush = new ReferenceCountedBuffer("buffToPush" + String(currBuffIndex),
                                                                                 numOfChannels,
-                                                                                samplesPerBlockExpected);
+                                                                                grainSize);
             auto audioSampleBufferToPush = buffToPush->getAudioSampleBuffer();
 
             currBuffIndex++;
@@ -219,7 +220,8 @@ void PlayComponent::addBuffersToQueue() {
             auto maxSample = jmin(endVal.get(), currentAudioSampleBuffer->getNumSamples());
             while (outputSamplesOffset < audioSampleBufferToPush->getNumSamples()) {
                 auto bufferSamplesRemaining = currentAudioSampleBuffer->getNumSamples() - position;
-                auto samplesThisTime = jmin(samplesPerBlockExpected - outputSamplesOffset, bufferSamplesRemaining);
+                auto samplesThisTime = jmin(grainSize - outputSamplesOffset, bufferSamplesRemaining);
+                cout << "samples this time " << samplesThisTime << endl;
                 for (int channel = 0; channel < numOfChannels; channel++) {
                     audioSampleBufferToPush->copyFrom(channel, outputSamplesOffset, *currentAudioSampleBuffer,
                                                       channel, position, samplesThisTime);

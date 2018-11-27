@@ -37,7 +37,7 @@ private:
                          function<void()> onValueChange);
 
     // vars
-    const int MAX_QUEUE_SIZE = 5;
+    const int MAX_QUEUE_SIZE = 10;
     deque<ReferenceCountedBuffer::Ptr> buffersQueue{};
     int currBuffIndex = 0;
 
@@ -51,7 +51,7 @@ private:
     Slider endSlider{Slider::SliderStyle::Rotary, Slider::NoTextBox};
     const int MIN_LEN_GAP = 100;
     Slider grainSizeSlider{Slider::SliderStyle::Rotary, Slider::NoTextBox};
-    const int MAX_GRAIN_SIZE = 2000;
+    const int MAX_GRAIN_SIZE = 1000;
     const int MIN_GRAIN_SIZE = 100;
     int grainSize = (MAX_GRAIN_SIZE + MIN_GRAIN_SIZE) / 2;
 
