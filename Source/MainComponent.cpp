@@ -37,27 +37,10 @@ MainComponent::MainComponent() : formatManager(new AudioFormatManager),
     }));
 }
 
-//void MainComponent::run() {
-//    while (!threadShouldExit()) {
-//        checkForBuffersToFree();
-//        wait(500);
-//    }
-//
-//}
-
-//void MainComponent::checkForBuffersToFree() {
-//    for (int i = buffers.size() - 1; i > 0; --i) {
-//        ReferenceCountedBuffer::Ptr buffer(buffers.getUnchecked(i));
-//        if (buffer->getReferenceCount() == 2) {
-//            buffers.remove(i);
-//        }
-//    }
-//}
 
 MainComponent::~MainComponent() {
     // This shuts down the audio device and clears the audio source.
     shutdownAudio();
-//    stopThread(1000);
 
     subscriptions.clear();
 }
@@ -109,15 +92,3 @@ void MainComponent::resized() {
     // If you add any child components, this is where you should
     // update their positions.
 }
-
-//void MainComponent::playBtnClicked() {
-//    cout << "playBtnClicked " << "state is now " << playBtn.getToggleState() << endl;
-//    if (playBtn.getToggleState()) {
-//        changeState(Play);
-//    } else changeState(Stop);
-//}
-
-//void MainComponent::changeState(PlayState newState) {
-//    cout << "state is " << state << " changing state to " << newState << endl;
-//    state = newState;
-//}
