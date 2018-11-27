@@ -33,13 +33,14 @@ private:
     // methods
     void addBuffersToQueue();
     ReferenceCountedBuffer::Ptr getAudioBufferFromQueue();
-    void setupSlider(Slider& slider, Component& toPutNextTo, const string& name, const double value,
+    void setupSlider(Slider& slider, Component& toPutNextTo, const string& name, double value,
                          function<void()> onValueChange);
+    void splitFileToGrains();
 
     // vars
     const int MAX_QUEUE_SIZE = 10;
     deque<ReferenceCountedBuffer::Ptr> buffersQueue{};
-    int currBuffIndex = 0;
+    int currBuffNum = 0;
 
     const int SLIDER_WIDTH = 100;
     const int SLIDER_HIGHT = 100;
@@ -54,6 +55,8 @@ private:
     const int MAX_GRAIN_SIZE = 1000;
     const int MIN_GRAIN_SIZE = 100;
     int grainSize = (MAX_GRAIN_SIZE + MIN_GRAIN_SIZE) / 2;
+    int currGrainIndex = 0;
+    vector<ReferenceCountedBuffer::Ptr> grainVec{};
 
 
     PlayState state{Stop};
@@ -66,6 +69,7 @@ private:
     int samplesPerBlockExpected;
     double sampleRate;
     int numOfChannels;
+    int64 fileNumSamples;
 
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PlayComponent)

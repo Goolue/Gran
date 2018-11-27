@@ -35,6 +35,7 @@ PlayComponent::PlayComponent(value<File>* file, shared_ptr<AudioFormatManager> f
 
     setupSlider(grainSizeSlider, endSlider, "Grain size", grainSize, [&]() {
        grainSize = static_cast<int>(grainSizeSlider.getValue());
+       splitFileToGrains();
     });
     grainSizeSlider.setRange(MIN_GRAIN_SIZE, MAX_GRAIN_SIZE, 10);
     grainSizeSlider.setValue(grainSize);
@@ -57,6 +58,7 @@ PlayComponent::PlayComponent(value<File>* file, shared_ptr<AudioFormatManager> f
             grainSizeSlider.setEnabled(true);
 
             numOfChannels = reader->numChannels;
+            fileNumSamples = reader->lengthInSamples;
             ReferenceCountedBuffer::Ptr newBuffer = new ReferenceCountedBuffer(fileName,
                                                                                reader->numChannels,
                                                                                (int) reader->lengthInSamples);
@@ -64,6 +66,7 @@ PlayComponent::PlayComponent(value<File>* file, shared_ptr<AudioFormatManager> f
             currentBuffer = newBuffer;
             buffers.add(newBuffer);
 
+            splitFileToGrains();
             fileLoaded = true;
         }
     });
@@ -199,7 +202,7 @@ void PlayComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate
 }
 
 void PlayComponent::addBuffersToQueue() {
-    if (fileLoaded && buffersQueue.size() < MAX_QUEUE_SIZE) {
+    if (fileLoaded && !grainVec.empty() && buffersQueue.size() < MAX_QUEUE_SIZE) {
         ReferenceCountedBuffer::Ptr retainedCurrentBuffer(currentBuffer);
         if (retainedCurrentBuffer == nullptr) {
             cout << "retained buffer is nullptr" << endl;
@@ -210,12 +213,12 @@ void PlayComponent::addBuffersToQueue() {
 
         while (buffersQueue.size() < MAX_QUEUE_SIZE) {
 
-            ReferenceCountedBuffer::Ptr buffToPush = new ReferenceCountedBuffer("buffToPush" + String(currBuffIndex),
+            ReferenceCountedBuffer::Ptr buffToPush = new ReferenceCountedBuffer("buffToPush" + String(currBuffNum),
                                                                                 numOfChannels,
                                                                                 grainSize);
             auto audioSampleBufferToPush = buffToPush->getAudioSampleBuffer();
 
-            currBuffIndex++;
+            currBuffNum++;
             auto outputSamplesOffset = 0;
             auto maxSample = jmin(endVal.get(), currentAudioSampleBuffer->getNumSamples());
             while (outputSamplesOffset < audioSampleBufferToPush->getNumSamples()) {
@@ -240,4 +243,33 @@ void PlayComponent::addBuffersToQueue() {
                  audioSampleBufferToPush->getNumSamples() << endl;
         }
     }
+}
+
+void PlayComponent::splitFileToGrains() {
+    vector<ReferenceCountedBuffer::Ptr> vec{};
+    ReferenceCountedBuffer::Ptr retainedCurrentBuffer(currentBuffer);
+    if (retainedCurrentBuffer == nullptr) {
+        cout << "retained buffer is nullptr" << endl;
+        return;
+    }
+    auto currentAudioSampleBuffer = retainedCurrentBuffer->getAudioSampleBuffer();
+    int index = 0;
+    int samplesLeft = currentAudioSampleBuffer->getNumSamples();
+    int buffersCount = 0;
+    while (samplesLeft > 0) {
+        int samplesThisTime = jmin(grainSize, samplesLeft);
+        ReferenceCountedBuffer::Ptr buffToPush = new ReferenceCountedBuffer("grainBuff" + String(buffersCount),
+                                                                            numOfChannels,
+                                                                            samplesThisTime);
+        auto audioSampleBufferToPush = buffToPush->getAudioSampleBuffer();
+        for (int channel = 0; channel < numOfChannels; channel++) {
+            audioSampleBufferToPush->copyFrom(channel, 0, *currentAudioSampleBuffer,
+                                              channel, index, samplesThisTime);
+            vec.push_back(buffToPush);
+            samplesLeft -= samplesThisTime;
+            index += samplesThisTime;
+        }
+    }
+    swap(vec, grainVec);
+
 }
