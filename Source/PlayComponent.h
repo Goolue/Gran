@@ -36,6 +36,7 @@ private:
     void setupSlider(Slider& slider, Component& toPutNextTo, const string& name, double value,
                          function<void()> onValueChange);
     void splitFileToGrains();
+    ReferenceCountedBuffer::Ptr getGrainFromVec(int startIndex, int endIndex);
 
     // vars
     const int MAX_QUEUE_SIZE = 10;
@@ -56,6 +57,7 @@ private:
     const int MIN_GRAIN_SIZE = 100;
     int grainSize = (MAX_GRAIN_SIZE + MIN_GRAIN_SIZE) / 2;
     int currGrainIndex = 0;
+    ReferenceCountedBuffer::Ptr currGrain = nullptr;
     vector<ReferenceCountedBuffer::Ptr> grainVec{};
 
 

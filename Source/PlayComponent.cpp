@@ -34,8 +34,8 @@ PlayComponent::PlayComponent(value<File>* file, shared_ptr<AudioFormatManager> f
     });
 
     setupSlider(grainSizeSlider, endSlider, "Grain size", grainSize, [&]() {
-       grainSize = static_cast<int>(grainSizeSlider.getValue());
-       splitFileToGrains();
+        grainSize = static_cast<int>(grainSizeSlider.getValue());
+        splitFileToGrains();
     });
     grainSizeSlider.setRange(MIN_GRAIN_SIZE, MAX_GRAIN_SIZE, 10);
     grainSizeSlider.setValue(grainSize);
@@ -71,7 +71,7 @@ PlayComponent::PlayComponent(value<File>* file, shared_ptr<AudioFormatManager> f
         }
     });
 
-    setSize(playBtn.getWidth() + 5 * 4 + 4 * SLIDER_WIDTH , playBtn.getHeight());
+    setSize(playBtn.getWidth() + 5 * 4 + 4 * SLIDER_WIDTH, playBtn.getHeight());
 
     startThread();
 }
@@ -208,35 +208,44 @@ void PlayComponent::addBuffersToQueue() {
             cout << "retained buffer is nullptr" << endl;
             return;
         }
-        auto currentAudioSampleBuffer = retainedCurrentBuffer->getAudioSampleBuffer();
-        auto position = jmax(retainedCurrentBuffer->position, startVal.get());
+//        auto currentAudioSampleBuffer = retainedCurrentBuffer->getAudioSampleBuffer();
+//        auto position = jmax(retainedCurrentBuffer->position, startVal.get());
+
+        int startGrainIndex = startVal.get() / grainSize;
+        int endGrainIndex = endVal.get() / grainSize;
 
         while (buffersQueue.size() < MAX_QUEUE_SIZE) {
 
             ReferenceCountedBuffer::Ptr buffToPush = new ReferenceCountedBuffer("buffToPush" + String(currBuffNum),
                                                                                 numOfChannels,
-                                                                                grainSize);
+                                                                                samplesPerBlockExpected);
             auto audioSampleBufferToPush = buffToPush->getAudioSampleBuffer();
 
             currBuffNum++;
             auto outputSamplesOffset = 0;
-            auto maxSample = jmin(endVal.get(), currentAudioSampleBuffer->getNumSamples());
+
+//            auto maxSample = jmin(endVal.get(), currentAudioSampleBuffer->getNumSamples());
+            auto grain = getGrainFromVec(startGrainIndex, endGrainIndex);
             while (outputSamplesOffset < audioSampleBufferToPush->getNumSamples()) {
-                auto bufferSamplesRemaining = currentAudioSampleBuffer->getNumSamples() - position;
-                auto samplesThisTime = jmin(grainSize - outputSamplesOffset, bufferSamplesRemaining);
+//                auto bufferSamplesRemaining = currentAudioSampleBuffer->getNumSamples() - position;
+                auto currentAudioSampleBuffer = grain->getAudioSampleBuffer();
+                auto samplesThisTime = jmin(samplesPerBlockExpected - outputSamplesOffset,
+                                            currentAudioSampleBuffer->getNumSamples() - grain->position);
                 cout << "samples this time " << samplesThisTime << endl;
                 for (int channel = 0; channel < numOfChannels; channel++) {
                     audioSampleBufferToPush->copyFrom(channel, outputSamplesOffset, *currentAudioSampleBuffer,
-                                                      channel, position, samplesThisTime);
+                                                      channel, grain->position, samplesThisTime);
                     audioSampleBufferToPush->applyGain(static_cast<float>(currGain));
                 }
                 outputSamplesOffset += samplesThisTime;
-                position += samplesThisTime;
-                if (position >= maxSample) {
-                    position = startVal.get();
+                grain->position += samplesThisTime;
+                if (grain->position >= currentAudioSampleBuffer->getNumSamples()) {
+                    currGrain->position = 0;
+                    currGrain = nullptr;
+                    grain = getGrainFromVec(startGrainIndex, endGrainIndex);
                 }
             }
-            retainedCurrentBuffer->position = position;
+//            retainedCurrentBuffer->position = position;
             buffersQueue.push_back(buffToPush);
 
             cout << "pushed to queue. queue size is now " << buffersQueue.size() << " pushed buff size " <<
@@ -265,11 +274,30 @@ void PlayComponent::splitFileToGrains() {
         for (int channel = 0; channel < numOfChannels; channel++) {
             audioSampleBufferToPush->copyFrom(channel, 0, *currentAudioSampleBuffer,
                                               channel, index, samplesThisTime);
-            vec.push_back(buffToPush);
-            samplesLeft -= samplesThisTime;
-            index += samplesThisTime;
         }
+        buffersCount++;
+        vec.push_back(buffToPush);
+        samplesLeft -= samplesThisTime;
+        index += samplesThisTime;
     }
     swap(vec, grainVec);
 
+}
+
+ReferenceCountedBuffer::Ptr PlayComponent::getGrainFromVec(int startIndex, int endIndex) {
+    cout << "getGrainFromVec start " << startIndex << " end " << endIndex << " index " << currGrainIndex << endl;
+    if (currGrain != nullptr && currGrainIndex >= startIndex) {
+        cout << "returning current grain!" << endl;
+        return currGrain;
+    }
+    if (currGrainIndex < startIndex) currGrainIndex = startIndex;
+    cout << "current grain index " << currGrainIndex << endl;
+    auto grain = grainVec[currGrainIndex];
+    currGrain = grain;
+    currGrainIndex++;
+    if (currGrainIndex == endIndex || currGrainIndex == grainVec.size()) {
+        cout << "resetting grain index " << currGrainIndex << endl;
+        currGrainIndex = startIndex;
+    }
+    return grain;
 }
